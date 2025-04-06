@@ -1,0 +1,75 @@
+
+
+.menu-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px; /* Ajusta el ancho */
+  height: 100vh; /* Ocupará toda la pantalla */
+  background: #250902;
+  color: white;
+  padding: 20px;
+  z-index: 1000;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+  overflow-y: auto; /* Permite hacer scroll si hay muchas opciones */
+}
+
+.menu-container ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+
+
+
+.menu-container li:last-child {
+  border-bottom: none;
+}
+s
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh; /* Ocupa toda la pantalla */
+  background: rgba(0, 0, 0, 0.5); /* Oscurece el fondo */
+  backdrop-filter: blur(3px); /* Añade un desenfoque opcional */
+  z-index: 900;
+}
+
+.menu-container hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.5); /* Línea sutil */
+  margin: 20px 0;
+}
+
+/* Estilo del texto de ayuda */
+.menu-container .help-text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8); /* Color más tenue */
+  margin-top: 10px;
+}
+
+.menu-container a {
+  color: white !important;
+  text-decoration: none !important;
+}
+
+
+.menu-container a:hover {
+  color: #b38b6d; /* Color dorado/marrón al pasar el mouse */
+}
+
+.user-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+.user-button:hover {
+  color: #b38b6d; /* Cambio de color al pasar el mouse */
+}

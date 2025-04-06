@@ -10,10 +10,14 @@
   </template>
   
   <script>
-  import "@/assets/styles/hero.css";
+  
+  
   
   export default {
     name: "HeroSection",
   };
   </script>
+
+<style src="@/assets/styles/hero.css"></style>
+
   

@@ -1,39 +1,26 @@
 <template>
-  <div id="app">
-    <AppNavbar />
-    <HeroSection />
-  </div>
+  <router-view /> <!-- Solo esto -->
 </template>
 
 <script>
-import AppNavbar from "./components/AppNavbar.vue";
-import HeroSection from "./components/HeroSection.vue";
-
 export default {
-  components: {
-    AppNavbar,
-    HeroSection,
-  },
+  name: 'App'
 };
 </script>
 
 <style>
-/* Asegura que toda la pantalla se use correctamente */
+/* Estilos GLOBALES (aquí sí van) */
+a {
+  color: inherit;
+  text-decoration: none;
+  font-weight: normal;
+}
+
 html, body {
   width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Bloquea el scroll en toda la página */
-}
-
-/* Ajusta el contenedor principal */
-#app {
-  width: 100%;
-  height: 100vh; /* Ocupará exactamente el alto de la pantalla */
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; /* Asegura que nada sobresalga */
+  overflow: hidden;
 }
 </style>
-
