@@ -1,22 +1,89 @@
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    background-color: #4b2c1a;
-    color: white;
-  }
-  
-  .menu button {
+
+  .menu-button,
+  .search-button,
+  .cart-button {
     background: none;
     border: none;
     color: white;
-    margin-left: 10px;
+    font-size: 18px;
     cursor: pointer;
-    font-size: 16px;
+    margin: 0 10px;
   }
   
   .menu button:hover {
     opacity: 0.8;
   }
   
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 15px !important; /* Reduce el padding superior e inferior */
+    background-color: #250902;
+    color: white;
+    position: relative;
+    height: 20px; /* Reduce la altura total */
+}
+
+
+.left-section {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Espacio entre elementos */
+}
+
+.search-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+.search-button:hover {
+  color: #b38b6d; /* Cambio de color al pasar el mouse */
+}
+
+.right-section {
+  display: flex;
+  align-items: center; /* Alinea los elementos verticalmente */
+  gap: 15px; /* Espacio entre los elementos */
+}
+
+
+.search-button,
+.cart-button {
+    font-size: 25px; /* Reduce un poco el tamaño de los botones */
+    padding: 5px 10px; /* Menos padding para que ocupen menos espacio */
+}
+
+.logo {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.8rem;
+  white-space: nowrap; /* Evita que el texto se divida en dos líneas */
+}
+
+.user-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Centra la imagen en el botón */
+  width: 40px; /* Tamaño fijo para evitar colapsos */
+  height: 40px;
+}
+
+.user-icon {
+  width: 30px; /* Ajusta el tamaño */
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block; /* Asegura que se renderice */
+  visibility: visible !important; /* Fuerza a que sea visible */
+}
+
