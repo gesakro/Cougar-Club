@@ -1,6 +1,6 @@
 <template>
   <div class="menu-wrapper">
-    <!-- Botón del menú -->
+    <!-- Botón del menú (visible siempre) -->
     <button 
       @click="toggleMenu"
       class="menu-button"
@@ -10,34 +10,37 @@
       <span class="menu-icon">{{ isOpen ? '✕' : '☰' }}</span>
     </button>
 
-    <!-- Overlay y menú -->
+    <!-- Overlay (solo visible en mobile) -->
     <transition name="fade">
       <div 
-        v-if="isOpen" 
+        v-if="isOpen && isMobile" 
         class="menu-overlay" 
         @click="toggleMenu"
       ></div>
     </transition>
 
-    <transition name="slide">
+    <!-- Contenedor del menú -->
+    <transition :name="isMobile ? 'slide' : 'dropdown'">
       <div 
         v-if="isOpen"
         class="menu-container"
-        :class="{ 'desktop-menu': !isMobile }"
+        :class="{ 'mobile-menu': isMobile, 'desktop-menu': !isMobile }"
       >
         <ul class="menu-list">
           <li v-for="(item, index) in menuItems" :key="index">
             <router-link 
               :to="item.path" 
-              @click="toggleMenu"
+              @click="closeMenu"
               class="menu-link"
+              active-class="router-link-exact-active"
             >
               {{ item.label }}
             </router-link>
           </li>
         </ul>
 
-        <div class="menu-footer">
+        <!-- Footer del menú (solo mobile) -->
+        <div v-if="isMobile" class="menu-footer">
           <p class="help-text">¿Necesitas ayuda?</p>
           <a href="tel:+573123456789" class="contact-link">
             <span class="phone-icon">📞</span>
@@ -70,7 +73,15 @@ export default {
   methods: {
     toggleMenu() {
       this.isOpen = !this.isOpen;
-      document.body.style.overflow = this.isOpen ? 'hidden' : '';
+      if (this.isMobile) {
+        document.body.style.overflow = this.isOpen ? 'hidden' : '';
+      }
+    },
+    closeMenu() {
+      this.isOpen = false;
+      if (this.isMobile) {
+        document.body.style.overflow = '';
+      }
     },
     checkScreenSize() {
       this.isMobile = window.innerWidth < 768;
@@ -79,10 +90,10 @@ export default {
   mounted() {
     window.addEventListener('resize', this.checkScreenSize);
   },
-  beforeUnmount() {  // <-- Cambiado a beforeUnmount
-  window.removeEventListener('resize', this.checkScreenSize);
-  document.body.style.overflow = '';
-}
+  beforeUnmount() {
+    window.removeEventListener('resize', this.checkScreenSize);
+    document.body.style.overflow = '';
+  }
 };
 </script>
 
@@ -90,7 +101,8 @@ export default {
 /* === ESTILOS BASE === */
 .menu-wrapper {
   position: relative;
-  display: inline-block;
+  display: flex;
+  align-items: center;
 }
 
 .menu-button {
@@ -98,9 +110,7 @@ export default {
   border: none;
   cursor: pointer;
   padding: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin-right: 1rem;
   transition: transform 0.2s;
 }
 
@@ -112,6 +122,7 @@ export default {
 
 .menu-button:hover .menu-icon {
   color: #b38b6d;
+  transform: scale(1.1);
 }
 
 /* === OVERLAY === */
@@ -128,24 +139,47 @@ export default {
 
 /* === MENÚ PRINCIPAL === */
 .menu-container {
+  z-index: 999;
+  background: #250902;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Versión mobile */
+.mobile-menu {
   position: fixed;
   top: 0;
   left: 0;
   width: 280px;
   height: 100vh;
-  background: #250902;
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
   box-shadow: 2px 0 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Versión desktop */
+.desktop-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .menu-list {
   list-style: none;
-  padding: 1.5rem 0;
+  padding: 0;
   margin: 0;
+}
+
+.mobile-menu .menu-list {
+  padding: 1.5rem 0;
   flex-grow: 1;
+}
+
+.desktop-menu .menu-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0;
 }
 
 .menu-link {
@@ -159,23 +193,45 @@ export default {
   position: relative;
 }
 
+/* Efectos hover y active */
 .menu-link:hover,
 .menu-link.router-link-exact-active {
   color: #b38b6d;
   background: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-menu .menu-link:hover,
+.mobile-menu .menu-link.router-link-exact-active {
   transform: translateX(5px);
 }
 
+.desktop-menu .menu-link:hover,
+.desktop-menu .menu-link.router-link-exact-active {
+  transform: translateY(-2px);
+}
+
+/* Línea decorativa */
 .menu-link:before {
   content: "";
   position: absolute;
+  background: #b38b6d;
+  transition: transform 0.3s;
+}
+
+.mobile-menu .menu-link:before {
   left: 0;
   top: 0;
   height: 100%;
   width: 3px;
-  background: #b38b6d;
   transform: scaleY(0);
-  transition: transform 0.3s;
+}
+
+.desktop-menu .menu-link:before {
+  left: 1.5rem;
+  bottom: 0.5rem;
+  width: calc(100% - 3rem);
+  height: 2px;
+  transform: scaleX(0);
 }
 
 .menu-link:hover:before,
@@ -183,7 +239,12 @@ export default {
   transform: scaleY(1);
 }
 
-/* === PIE DEL MENÚ === */
+.desktop-menu .menu-link:hover:before,
+.desktop-menu .menu-link.router-link-exact-active:before {
+  transform: scaleX(1);
+}
+
+/* === PIE DEL MENÚ (solo mobile) === */
 .menu-footer {
   padding: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -213,89 +274,40 @@ export default {
   font-size: 1.1rem;
 }
 
-/* === VERSIÓN DESKTOP === */
-.desktop-menu {
-  width: 220px; /* Más estrecho para desktop */
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-}
-
 /* === ANIMACIONES === */
+/* Fade para overlay */
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s;
 }
-.fade-enter, .fade-leave-to {
+.fade-enter-from, .fade-leave-to {
   opacity: 0;
 }
 
+/* Slide para mobile menu */
 .slide-enter-active, .slide-leave-active {
   transition: transform 0.3s ease;
 }
-.slide-enter, .slide-leave-to {
+.slide-enter-from, .slide-leave-to {
   transform: translateX(-100%);
 }
 
-/* === RESPONSIVE DESIGN === */
-@media (min-width: 768px) {
-  .menu-button {
-    display: none; /* Oculta el botón en desktop */
-    position: relative;
-    width: auto;
-    height: auto;
-  }
-  
-  .menu-container {
-    position: relative;
-    width: 100%;
-    height: auto;
-    background: transparent;
-    box-shadow: none;
-    flex-direction: row;
-    align-items: center;
-    overflow: visible;
-  }
-  
-  .menu-list {
-    display: flex;
-    padding: 0;
-    gap: 1rem;
-  }
-  
-  .menu-link {
-    padding: 0.5rem 1rem;
-    font-size: 0.95rem;
-  }
-  
-  .menu-link:hover,
-  .menu-link.router-link-exact-active {
-    transform: translateY(-3px);
-  }
-  
-  .menu-link:before {
-    width: 100%;
-    height: 3px;
-    top: auto;
-    bottom: 0;
-    transform: scaleX(0);
-  }
-  
-  .menu-link:hover:before,
-  .menu-link.router-link-exact-active:before {
-    transform: scaleX(1);
-  }
-  
-  .menu-footer {
-    display: none;
-  }
+/* Dropdown para desktop menu */
+.dropdown-enter-active, .dropdown-leave-active {
+  transition: all 0.3s ease;
+}
+.dropdown-enter-from, .dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
+/* === RESPONSIVE === */
 @media (max-width: 480px) {
-  .menu-container {
+  .mobile-menu {
     width: 85%;
   }
   
   .menu-link {
     padding: 0.7rem 1.2rem;
-    font-size: 0.95rem;
   }
 }
 </style>
