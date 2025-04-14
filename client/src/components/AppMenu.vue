@@ -238,6 +238,9 @@ export default {
 @media (min-width: 768px) {
   .menu-button {
     display: none; /* Oculta el botón en desktop */
+    position: relative;
+    width: auto;
+    height: auto;
   }
   
   .menu-container {
