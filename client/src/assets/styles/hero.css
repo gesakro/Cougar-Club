@@ -5,7 +5,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden; /* Evita el scroll si hay contenido extra */
     margin: 0; /* Asegura que no haya espacios adicionales */
     padding: 0;
 }

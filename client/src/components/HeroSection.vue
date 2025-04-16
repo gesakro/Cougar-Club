@@ -1,29 +1,33 @@
 <template>
-  <section class="hero">
-    <!-- Imagen optimizada con loading lazy -->
-    <img 
-      src="@/assets/img/fondo.jpg" 
-      alt="Nueva Colección Cougar Club" 
-      loading="lazy"
-      class="hero-image"
-    />
-    
-    <div class="overlay">
-      <h2 class="subtitle">Descubre la Nueva Colección</h2>
-      <h1 class="title">Cougar Club</h1>
+  <div class="hero-container">
+    <section class="hero">
+      <img 
+        src="@/assets/img/fondo.jpg" 
+        alt="Nueva Colección Cougar Club" 
+        loading="lazy"
+        class="hero-image"
+      />
       
-      <!-- Botón con feedback táctil -->
-      <button 
-        class="cta-button"
-        @click="scrollToProducts"
-        @touchstart="scaleDown"
-        @touchend="scaleUp"
-        aria-label="Ver productos"
-      >
-        Comprar Ahora
-      </button>
+      <div class="overlay">
+        <h2 class="subtitle">Descubre la Nueva Colección</h2>
+        <h1 class="title">Cougar Club</h1>
+        
+        <button 
+          class="cta-button"
+          @click="scrollToProducts"
+          @touchstart="scaleDown"
+          @touchend="scaleUp"
+          aria-label="Ver productos"
+        >
+          Comprar Ahora
+        </button>
+      </div>
+    </section>
+
+    <div class="content-after-hero">
+      <slot></slot>
     </div>
-  </section>
+  </div>
 </template>
 
 <script>
@@ -46,16 +50,22 @@ export default {
 </script>
 
 <style scoped>
+/* Contenedor principal */
+.hero-container {
+  position: relative;
+  width: 100%;
+}
+
 /* 🖼️ Base del Hero */
 .hero {
   position: relative;
   width: 100%;
   height: 100vh;
-  max-height: 900px;
+  min-height: 600px;
+  max-height: 1200px;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
 }
 
 .hero-image {
@@ -65,6 +75,14 @@ export default {
   object-fit: cover;
   object-position: center 70%;
   filter: brightness(0.7);
+}
+
+/* Contenido después del hero */
+.content-after-hero {
+  position: relative;
+  width: 100%;
+  z-index: 10;
+  background: white;
 }
 
 /* 🎨 Overlay de contenido */
@@ -118,11 +136,11 @@ export default {
 /* 📱 Mobile-First Responsive */
 @media (max-width: 768px) {
   .hero {
-    height: 85vh;
+    height: 90vh;
+    min-height: 500px;
   }
 
   .overlay {
-    bottom: 15vh;
     padding: 0 1rem;
   }
 
@@ -133,6 +151,10 @@ export default {
 }
 
 @media (max-width: 480px) {
+  .hero {
+    min-height: 400px;
+  }
+
   .hero-image {
     object-position: 60% center;
   }
