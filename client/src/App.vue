@@ -1,48 +1,65 @@
 <template>
   <div class="app-container">
     <AppNavbar />
-    <main class="main-content">
-      <router-view />
-    </main>
-    <AppFooter class="site-footer" />
+    <div class="main-scroll-container">
+      <HeroSection />
+      <router-view /> <!-- Tu contenido principal -->
+      <AppFooter />
+    </div>
   </div>
 </template>
 
 <script>
 import AppNavbar from '@/components/AppNavbar.vue';
 import AppFooter from '@/components/AppFooter.vue';
+import HeroSection from '@/components/HeroSection.vue';
 
 export default {
   name: 'App',
-  components: { AppNavbar, AppFooter }
+  components: { AppNavbar, AppFooter, HeroSection }
 };
 </script>
 
 <style>
-/* Estilos globales */
-html, body {
-  width: 100%;
+/* Reset completo */
+html, body, #app {
   margin: 0;
   padding: 0;
-  /* No usar overflow: hidden */
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Elimina scroll global */
 }
 
 .app-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
 }
 
-.main-content {
+.main-scroll-container {
   flex: 1;
-  padding-bottom: 2rem; /* Espacio antes del footer */
+  overflow-y: auto; /* Scroll vertical */
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  position: relative;
 }
 
-/* Estilos específicos para el footer */
-.site-footer {
-  position: relative; /* Cambia a 'fixed' si quieres footer pegajoso */
-  bottom: 0;
-  width: 100%;
-  z-index: 100; /* Asegura que esté por encima de otros elementos */
+/* Personalización de la barra de scroll */
+.main-scroll-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+.main-scroll-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.main-scroll-container::-webkit-scrollbar-thumb {
+  background: #b38b6d;
+  border-radius: 5px;
+}
+
+.main-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #9a735a;
 }
 </style>
