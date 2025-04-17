@@ -1,6 +1,7 @@
 <template>
+  
   <div>
-
+    <AppNavbar />
     <div class="login-container">
       <header class="login-header">
         <h2>Sign In</h2>
@@ -78,16 +79,23 @@
         <p class="footer-brand"><strong>Cougar Club</strong></p>
       </footer>
     </div>
+    <AppFooter />
   </div>
 </template>
   
 <script>
 
 
+import AppFooter from '@/components/layout/AppFooter.vue';
+import AppNavbar from '@/components/layout/AppNavbar.vue';
+
+
+
 export default {
   name: 'UserLogin',
   components: {
-  
+    AppNavbar,
+    AppFooter
   },
   data() {
     return {

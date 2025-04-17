@@ -53,7 +53,13 @@ export default {
           block: 'start'
         });
       } else {
-        this.$router.push('/products');
+        this.$router.push({
+          path: '/products',
+          query: {
+            ref: 'hero_cta',
+            sort: 'newest '
+          }
+      });
       }
     },
     handleImageLoad() {
