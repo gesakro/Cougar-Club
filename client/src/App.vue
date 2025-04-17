@@ -1,24 +1,26 @@
 <template>
   <div class="app-container">
-    <AppNavbar />
+    <AppNavbar v-if="!$route.meta.hideNavbar" />
     <div class="main-scroll-container">
-      <HeroSection />
-      <router-view /> <!-- Tu contenido principal -->
-      <AppFooter />
+      <HeroSection v-if="!$route.meta.hideNavbar" />
+      <router-view />
+      <AppFooter v-if="!$route.meta.hideFooter" />
     </div>
   </div>
 </template>
 
 <script>
-import AppNavbar from '@/components/AppNavbar.vue';
-import AppFooter from '@/components/AppFooter.vue';
-import HeroSection from '@/components/HeroSection.vue';
+//import AppNavbar from '@/components/AppNavbar.vue';
+//import AppFooter from '@/components/AppFooter.vue';
+//import HeroSection from '@/components/HeroSection.vue';
 
 export default {
   name: 'App',
-  components: { AppNavbar, AppFooter, HeroSection }
+  components: {  }
 };
 </script>
+
+<!-- Tus estilos actuales se mantienen igual -->
 
 <style>
 /* Reset completo */

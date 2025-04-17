@@ -3,14 +3,15 @@
     <!-- Sección izquierda -->
     <div class="left-section">
       <AppMenu />
-      <div class="search-container" :class="{ 'active': searchActive }">
+      <div class="search-container" :class="{ 'active': searchActive, 'mobile-expanded': mobileExpanded }">
         <input
+          ref="searchInput"
           type="text"
           v-model="searchQuery"
           placeholder="Search..."
           class="search-input"
-          @focus="searchActive = true"
-          @blur="searchActive = false"
+          @focus="activateSearch"
+          @blur="deactivateSearch"
         />
         <button class="search-button" aria-label="Search">
           <span class="search-icon">🔍</span>
@@ -44,19 +45,30 @@ export default {
     return {
       searchQuery: "",
       searchActive: false,
-      cartItems: 2 // Ejemplo dinámico
+      cartItems: 2,
+      mobileExpanded: false
     };
   },
   methods: {
     goToLogin() {
       this.$router.push('/login');
+    },
+    activateSearch() {
+      this.searchActive = true;
+      if (window.innerWidth <= 768) {
+        this.mobileExpanded = true;
+      }
+    },
+    deactivateSearch() {
+      this.searchActive = false;
+      this.mobileExpanded = false;
     }
   }
 };
 </script>
 
 <style scoped>
-/* === ESTRUCTURA PRINCIPAL === */
+/* === ESTRUCTURA PRINCIPAL (MANTENIDO) === */
 .navbar {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -66,10 +78,10 @@ export default {
   position: sticky;
   top: 0;
   z-index: 800;
-  height: 60px;
+  height: 70px; /* Aumentado ligeramente */
 }
 
-/* === SECCIÓN IZQUIERDA === */
+/* === SECCIÓN IZQUIERDA (MANTENIDO) === */
 .left-section {
   display: flex;
   align-items: center;
@@ -93,7 +105,7 @@ export default {
   width: 100%;
   padding: 0.3rem;
   outline: none;
-  font-size: 0.9rem;
+  font-size: 1rem; /* Aumentado ligeramente */
 }
 
 .search-button {
@@ -105,13 +117,13 @@ export default {
 }
 
 .search-icon {
-  font-size: 1rem;
+  font-size: 1.2rem; /* Aumentado */
   display: flex;
 }
 
-/* === LOGO CENTRADO === */
+/* === LOGO CENTRADO (MANTENIDO CON AJUSTE) === */
 .logo {
-  font-size: 1.5rem;
+  font-size: 3rem; /* Aumentado de 1.5rem */
   font-weight: 700;
   color: white;
   text-decoration: none;
@@ -120,11 +132,7 @@ export default {
   transition: opacity 0.3s;
 }
 
-.logo:hover {
-  opacity: 0.9;
-}
-
-/* === SECCIÓN DERECHA === */
+/* === SECCIÓN DERECHA (MANTENIDO CON AJUSTE) === */
 .right-section {
   display: flex;
   align-items: center;
@@ -141,82 +149,73 @@ export default {
   transition: transform 0.2s;
 }
 
-.icon-button:hover {
-  transform: scale(1.1);
+.user-icon {
+  width: 2.5rem; /* Aumentado de 24px */
+  height: 2.5rem;
 }
 
-.user-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
+.cart-icon {
+  font-size: 1.2rem; /* Aumentado */
 }
 
 .cart-counter {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #b38b6d;
-  color: white;
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 0.8rem; /* Aumentado ligeramente */
 }
 
-/* === DISEÑO RESPONSIVE === */
+/* === MEJORAS PARA BÚSQUEDA EN MÓVIL === */
 @media (max-width: 768px) {
   .navbar {
     grid-template-columns: auto 1fr auto;
     padding: 0.8rem 1rem;
     gap: 10px;
-    height: auto;
-  }
-
-  .logo {
-    font-size: 1.3rem;
-    justify-self: start;
-    margin-left: 10px;
-    order: 1;
-  }
-
-  .left-section {
-    order: 0;
-  }
-
-  .right-section {
-    order: 2;
   }
 
   .search-container {
-    grid-column: span 3;
-    order: 3;
+    width: 40px; /* Solo icono inicialmente */
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  .search-container .search-input {
+    display: none;
+    width: 0;
+  }
+
+  .search-container.mobile-expanded {
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    top: 0.8rem;
+    width: auto;
+    z-index: 900;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+
+  .search-container.mobile-expanded .search-input {
+    display: block;
     width: 100%;
-    margin-top: 10px;
-    background: rgba(255, 255, 255, 0.8);
+    padding: 0.3rem 0.5rem;
+  }
+
+  .search-container.mobile-expanded .search-button {
+    margin-left: 0;
+  }
+
+  .logo {
+    font-size: 1.5rem; /* Ajustado para móvil */
+    margin-left: 10px;
+  }
+
+  .user-icon {
+    width: 24px;
+    height: 24px;
   }
 }
 
 @media (max-width: 480px) {
   .logo {
-    font-size: 1.1rem;
-  }
-
-  .left-section,
-  .right-section {
-    gap: 8px;
-  }
-
-  .search-container {
-    padding: 0.4rem 0.8rem;
-  }
-
-  .user-icon {
-    width: 20px;
-    height: 20px;
+    font-size: 1.3rem;
   }
 }
 </style>
