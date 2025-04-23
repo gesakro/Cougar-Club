@@ -346,7 +346,7 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f8f9fa;
+  background-color: #F8EAD8;
 }
 
 .search-container {
@@ -386,6 +386,8 @@ export default {
   gap: 2rem;
   height: calc(100vh - 100px);
   overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
   padding-right: 0.5rem;
 }
 

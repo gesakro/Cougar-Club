@@ -80,18 +80,22 @@ export default {
 </script>
 
 <style scoped>
+
 .product-card {
   width: 100%;
   max-width: 280px;
-  text-align: left;
-  margin: 0.5rem;
-  transition: transform 0.3s ease;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   position: relative;
-  cursor: pointer;
+  margin: 0.5rem;
 }
 
-.product-card:hover {
-  transform: translateY(-5px);
+.product-image {
+  border-radius: 8px 8px 0 0; /* Redondea solo las esquinas superiores */
+  overflow: hidden;
 }
 
 .product-image {
@@ -106,6 +110,12 @@ export default {
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
+}
+
+.product-card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.6), 
+              0 8px 16px rgba(0,0,0,0.6);
+  transform: translateY(-2px) scale(1.01);
 }
 
 .product-card:hover .product-image img {
@@ -148,8 +158,11 @@ export default {
   z-index: 2;
 }
 
+/* Ajustes para el contenido */
 .product-info {
-  padding: 0.5rem;
+  padding: 1rem; /* Un poco más de espacio */
+  background: white;
+  border-radius: 0 0 8px 8px; /* Redondea solo las esquinas inferiores */
 }
 
 .product-brand {

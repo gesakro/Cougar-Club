@@ -119,9 +119,11 @@
   <style scoped>
   .product-filters {
     background: white;
-    padding: 1.5rem;
+    padding: 1.2rem 1rem; 
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    width: 230px;
+
   }
   
   .filter-group {
@@ -170,8 +172,13 @@
   .price-range {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.5rem;
   }
+
+.price-range span {
+  min-width: 45px; /* Asegurar un ancho mínimo para los valores */
+  font-size: 0.9rem; /* Reducir ligeramente el tamaño de fuente */
+}
   
   .price-slider {
     flex-grow: 1;
@@ -180,8 +187,10 @@
   }
   
   .rating-stars {
-    display: flex;
-    gap: 0.5rem;
+  display: flex;
+  flex-wrap: wrap; /* Permite que los botones se envuelvan en múltiples líneas */
+  gap: 0.4rem; /* Reduce el espacio entre botones */
+  justify-content: space-between; /* Distribuye los botones uniformemente */
   }
   
   .rating-stars button {

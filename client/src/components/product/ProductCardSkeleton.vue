@@ -23,6 +23,8 @@ export default {
   background: white;
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Sombra base */
+  transition: all 0.3s ease; /* Para animación consistente */
 }
 
 .image-placeholder {
@@ -31,6 +33,7 @@ export default {
   background: linear-gradient(90deg, #f5f5f5 25%, #e8e8e8 50%, #f5f5f5 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+  border-radius: 8px 8px 0 0; /* Bordes redondeados solo arriba */
 }
 
 .info-placeholder {
@@ -38,8 +41,11 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  background: white;
+  border-radius: 0 0 8px 8px; /* Bordes redondeados solo abajo */
 }
 
+/* Resto de tus estilos permanecen igual... */
 .brand-placeholder {
   width: 30%;
   height: 12px;
