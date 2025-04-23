@@ -1,0 +1,126 @@
+.menu-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px; /* Ancho aumentado para mejor usabilidad */
+  height: 100vh;
+  background: #250902;
+  color: white;
+  padding: 20px;
+  z-index: 1000;
+  box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+  transform: translateX(0); /* Asegura posición inicial */
+  transition: transform 0.3s ease; /* Animación suave */
+}
+
+/* Estado cerrado */
+.menu-container:not(.v-if-active) {
+  transform: translateX(-100%);
+}
+
+.menu-container ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0; /* Espaciado mejorado */
+}
+
+.menu-container li {
+  padding: 12px 0; /* Espaciado vertical aumentado */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Divisores sutiles */
+  transition: all 0.3s ease;
+}
+
+.menu-container li:last-child {
+  border-bottom: none;
+}
+
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6); /* Overlay más oscuro */
+  backdrop-filter: blur(5px); /* Efecto blur más notorio */
+  z-index: 999; /* Un nivel debajo del menú */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.menu-overlay.v-if-active {
+  opacity: 1;
+}
+
+.menu-container hr {
+  border: none;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 1.5rem 0;
+}
+
+.help-text {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.menu-container a {
+  color: white;
+  text-decoration: none;
+  display: block;
+  padding: 8px 0;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.menu-container a:hover {
+  color: #b38b6d;
+  padding-left: 10px; /* Efecto de desplazamiento */
+}
+
+/* Efecto de borde izquierdo al hacer hover */
+.menu-container a:hover::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background: #b38b6d;
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 480px) {
+  .menu-container {
+    width: 85%;
+    max-width: 300px;
+    padding: 15px;
+  }
+  
+  .menu-container a {
+    font-size: 0.95rem;
+  }
+}
+
+/* Añade esto a tu CSS */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  transform: translateX(-100%);
+}

@@ -1,22 +1,135 @@
+/* === ESTILOS ACTUALIZADOS === */
 .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    background-color: #4b2c1a;
-    color: white;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  background-color: #250902;
+  padding: 0.8rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 800;
+  height: 60px; /* Altura consistente */
+}
+
+/* Sección izquierda */
+.left-section {
+  display: flex;
+  align-items: center;
+  justify-self: start;
+  gap: 15px;
+}
+
+/* Logo centrado */
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  text-decoration: none;
+  justify-self: center;
+  white-space: nowrap;
+}
+
+/* Sección derecha */
+.right-section {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: 15px;
+}
+
+/* Barra de búsqueda mejorada */
+.search-container {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 25px;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
+  width: 200px;
+}
+
+.search-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  padding: 0.3rem;
+  outline: none;
+}
+
+.search-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Iconos */
+.icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+}
+
+.cart-counter {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #b38b6d;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 📱 Responsive (Mobile First) */
+@media (max-width: 768px) {
+  .navbar {
+    grid-template-columns: auto 1fr auto;
+    padding: 0.8rem 1rem;
+  gap: 10px;
   }
-  
-  .menu button {
-    background: none;
-    border: none;
-    color: white;
+
+  .logo {
+    font-size: 1.3rem;
+    justify-self: start;
     margin-left: 10px;
-    cursor: pointer;
-    font-size: 16px;
+  }
+
+  .search-container {
+    width: auto;
+    background: transparent;
+    order: 3;
+    grid-column: span 3;
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .search-container.active {
+    background: rgba(255, 255, 255, 0.9);
+  }
+}
+
+@media (max-width: 480px) {
+  .logo {
+    font-size: 1.1rem;
   }
   
-  .menu button:hover {
-    opacity: 0.8;
+  .left-section {
+    gap: 8px;
   }
   
+  .right-section {
+    gap: 8px;
+  }
+}
