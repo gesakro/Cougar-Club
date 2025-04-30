@@ -40,7 +40,25 @@ const routes = [
     meta: {
       title: 'Página no encontrada | Cougar Club'
     }
+  },
+  {
+    path: '/cart',
+    name: 'Cart',
+    component: () => import('@/views/CartView.vue'),
+    meta: {
+      title: 'Carrito | Cougar Club'
+    }
+  },
+
+  {
+    path: '/signup',
+    name: 'signup',
+    component: () => import('@/views/UserSignUp.vue'),
+    meta: {
+      title: 'Registro | Cougar Club'
+    }
   }
+  
 ]
 
 const router = createRouter({
