@@ -103,3 +103,49 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Error en el servidor' });
   }
 };
+
+// Obtener el perfil del usuario autenticado
+exports.getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password'); // Excluir la contraseña
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Actualizar datos personales del usuario autenticado
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const { email, perfil } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      { email, perfil },
+      { new: true }
+    ).select('-password'); // Excluir la contraseña del resultado
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Eliminar cuenta del usuario autenticado
+exports.deleteUserAccount = async (req, res) => {
+  try {
+    const deletedUser = await User.findByIdAndDelete(req.user.id);
+    if (!deletedUser) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    res.json({ message: 'Cuenta eliminada exitosamente' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
