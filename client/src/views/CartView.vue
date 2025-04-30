@@ -198,7 +198,7 @@ export default {
 <style scoped>
 /* Estilos para el carrito con diseño moderno */
 .cart-page {
-  background-color: #f9f7f5;
+  background-color: #f3e8d5;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -493,7 +493,7 @@ export default {
 .remove-btn {
   background: none;
   border: none;
-  color: #ccc;
+  color: #020202;
   cursor: pointer;
   transition: color 0.2s;
   display: flex;

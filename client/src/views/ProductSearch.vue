@@ -419,7 +419,7 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: var(--gray-100);
+  background-color: #f3e8d5;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -677,7 +677,7 @@ export default {
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--gray-200);
+  border-bottom: 1px solid rgb(104, 22, 22);
 }
 
 .results-title {

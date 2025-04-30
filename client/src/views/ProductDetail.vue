@@ -316,7 +316,7 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background-color: #f8f9fa;
+    background-color: #f3e8d5;
   }
   
   .detail-container {
@@ -372,7 +372,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 3rem;
     margin-bottom: 4rem;
-    background-color: white;
+    background-color: rgb(243, 231, 225);
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     padding: 2rem;
@@ -493,15 +493,15 @@
   .product-availability {
     display: inline-block;
     padding: 0.3rem 1rem;
-    background-color: #e8f5e9;
-    color: #2e7d32;
+    background-color: #cadfcc;
+    color: #28832c;
     border-radius: 4px;
     font-weight: 500;
     margin-bottom: 1.5rem;
   }
   
   .product-availability.out-of-stock {
-    background-color: #ffebee;
+    background-color: #ecd0d4;
     color: #c62828;
   }
   
