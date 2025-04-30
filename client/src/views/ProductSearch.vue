@@ -93,6 +93,8 @@ import ProductSection from '@/components/product/ProductSection.vue'
 import ProductPagination from '@/components/product/ProductPagination.vue'
 import SearchOverlay from '@/components/product/SearchOverlay.vue'
 
+
+
 export default {
   name: 'ProductsSearch',
   components: {
@@ -128,7 +130,9 @@ export default {
           isTrending: true,
           isNew: true,
           isBestSeller: true,
-          description: 'Zapatos deportivos de alta calidad'
+          description: 'Zapatos deportivos de alta calidad',
+          // En tu ProductsSearch.vue
+          image: require('@/assets/img/clothes/zapatilla.jpg')
         },
         { 
           id: 2, 
@@ -140,7 +144,8 @@ export default {
           isTrending: true,
           isNew: false,
           isBestSeller: true,
-          description: 'Camiseta 100% algodón'
+          description: 'Camiseta 100% algodón',
+          image: require('@/assets/img/clothes/CamisaBlanca.jpg')
         },
         { 
           id: 3, 
@@ -152,7 +157,8 @@ export default {
           isTrending: false,
           isNew: true,
           isBestSeller: false,
-          description: 'Gorra con ajuste personalizado'
+          description: 'Gorra con ajuste personalizado',
+          image: require('@/assets/img/clothes/gorra.jpg')
         },
         { 
           id: 4, 
@@ -164,7 +170,56 @@ export default {
           isTrending: true,
           isNew: false,
           isBestSeller: true,
-          description: 'Pantalón cómodo para uso diario'
+          description: 'Pantalón cómodo para uso diario',
+          image: require('@/assets/img/clothes/pantalon.jpg')
+        },{ 
+          id: 5, 
+          name: 'Mochila vanguardista', 
+          price: 99.99, 
+          category: 'clothing', 
+          stock: 0, 
+          rating: 4.0,
+          isTrending: true,
+          isNew: false,
+          isBestSeller: true,
+          description: 'Mochila vanguardista para uso diario',
+          image: require('@/assets/img/clothes/bolso.jpg')
+        },{ 
+          id: 6, 
+          name: 'Bolso de mano', 
+          price: 19.99, 
+          category: 'clothing', 
+          stock: 0, 
+          rating: 4.0,
+          isTrending: true,
+          isNew: false,
+          isBestSeller: false,
+          description: 'Bolso de mano elegante para uso diario',
+          image: require('@/assets/img/clothes/bolso_mano_mujer.jpg')
+        },{ 
+          id: 7, 
+          name: 'Bolso de mano', 
+          price: 40.99, 
+          category: 'clothing', 
+          stock: 0, 
+          rating: 2.0,
+          isTrending: true,
+          isNew: false,
+          isBestSeller: false,
+          description: 'Bolso de mano elegante para uso diario',
+          image: require('@/assets/img/clothes/bikini_mujer.jpg')
+        },{ 
+          id: 8, 
+          name: 'Zapatos de charol', 
+          price: 40.99, 
+          category: 'clothing', 
+          stock: 0, 
+          rating: 2.0,
+          isTrending: true,
+          isNew: false,
+          isBestSeller: false,
+          description: 'Zapatos de charol elegantes para ocasiones especiales',
+          image: require('@/assets/img/clothes/zapatos_charol.jpg')
         }
       ],
       filteredProducts: [],
