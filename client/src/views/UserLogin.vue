@@ -44,7 +44,7 @@
                 <input type="checkbox" id="remember" v-model="rememberMe" />
                 <label for="remember">Recordarme</label>
               </div>
-              <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+              <a class="signup-link"> <router-link to="/recoverPassword">¿Olvidaste tu contraseña?</router-link></a>
             </div>
             
             <button type="submit" class="signin-btn">Iniciar Sesión</button>

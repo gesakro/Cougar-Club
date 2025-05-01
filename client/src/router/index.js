@@ -24,6 +24,17 @@ const routes = [
       searchQuery: route.query.q
     })
   },
+
+  {
+    path: '/product/:id',
+    name: 'ProductDetail',
+    component: () => import('@/views/ProductDetail.vue'),
+    meta: {
+      title: 'Vista única | Cougar Club'
+    },
+    props: true
+  },
+
   {
     path: '/login',
     name: 'Login',
@@ -56,6 +67,15 @@ const routes = [
     component: () => import('@/views/UserSignUp.vue'),
     meta: {
       title: 'Registro | Cougar Club'
+    }
+  },
+
+  {
+    path: '/recoverPassword',
+    name: 'RecoverPassword',
+    component: () => import('@/views/RecoverPassword.vue'),
+    meta: {
+      title: 'Recuperar contraseña | Cougar Club'
     }
   }
   
