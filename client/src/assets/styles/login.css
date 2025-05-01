@@ -1,0 +1,291 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Evita doble scroll */
+  }
+  
+
+  body {
+    background-color: #3C0A0A; /* Gris claro de fondo */
+    /* Tus estilos actuales se mantienen */
+
+  }
+
+/* Estilos base responsivos */
+.login-container {
+    font-family: Arial, sans-serif;
+    width: 90%;
+    max-width: 800px;
+    margin: 1rem auto;
+    padding: 0;
+    color: #333;
+    background-color: #F5E1C3;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    max-height: 90vh; /* Altura máxima del 90% del viewport */
+    overflow-y: auto; /* Scroll vertical cuando sea necesario */
+    display: flex;
+    flex-direction: column;
+  }
+/* Header responsivo */
+.login-header {
+  text-align: center;
+  padding: 1.2rem;
+  background-color: #6D071A;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 0; /* Eliminamos el margin antiguo */
+}
+
+
+.login-header h1 {
+  color: #fff;
+  font-size: clamp(1.8em, 5vw, 2.5em); /* Texto adaptable */
+  margin-bottom: 0.5rem;
+}
+
+
+.login-header h2 {
+  font-size: clamp(1.4em, 4vw, 1.8em);
+  color: #fff;
+}
+
+/* Contenido principal */
+
+.login-content {
+    padding: 1.5rem;
+    flex: 1; /* Ocupa el espacio disponible */
+  }
+/* Sección de bienvenida */
+.welcome-section h3 {
+  font-size: clamp(1.1em, 3vw, 1.3em);
+  color: #444;
+  margin-bottom: 5px;
+}
+
+.welcome-section p {
+  color: #666;
+  margin-bottom: 20px;
+  font-size: clamp(0.9em, 2.5vw, 1em);
+}
+
+/* Formulario responsivo */
+.login-form {
+  margin: 1.5rem 0;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: normal;
+  font-size: clamp(0.9em, 3vw, 1em);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: clamp(0.9em, 3vw, 1em);
+  box-sizing: border-box; /* Evita desbordamiento */
+}
+
+.forgot-password {
+  display: block;
+  margin: 10px 0 20px;
+  color: #0066cc;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: clamp(0.85em, 2.5vw, 0.95em);
+}
+
+.divider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 1.5rem 0;
+}
+
+/* Botones responsivos */
+.signin-btn {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: #000;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: clamp(0.9em, 3vw, 1em);
+  cursor: pointer;
+  margin-bottom: 15px;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.signin-btn:hover {
+  background-color: #333;
+}
+
+.signup-link {
+  text-align: center;
+  color: #666;
+  font-size: clamp(0.85em, 2.5vw, 0.95em);
+}
+
+.signup-link a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.toggle-section {
+  display: flex;
+  flex-direction: column; /* Asegura que el texto y el botón estén en columna */
+  align-items: center; /* Centra horizontalmente */
+  text-align: center; /* Asegura que el texto esté centrado */
+  margin-top: 15px;
+  gap: 10px; /* Espaciado entre el texto y el botón */
+}
+.google-btn {
+  padding: 0.8rem;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: clamp(0.85em, 2.5vw, 1em);
+  transition: background 0.3s;
+}
+
+.google-btn:hover {
+  background-color: #f5f5f5;
+}
+
+/* Sección de beneficios */
+.benefits-section {
+  margin-top: 30px;
+}
+
+.benefits-section h3 {
+  font-size: clamp(1.1em, 3vw, 1.2em);
+  margin-bottom: 10px;
+  color: #444;
+}
+
+.benefits-section ul {
+  list-style-type: disc;
+  padding-left: 20px;
+  color: #666;
+}
+
+.benefits-section li {
+  margin-bottom: 8px;
+  font-size: clamp(0.85em, 2.5vw, 0.95em);
+}
+
+/* Footer responsivo */
+.login-footer {
+  margin-top: 2rem;
+  font-size: clamp(0.8em, 2.5vw, 0.9em);
+  overflow-x: auto; /* Scroll horizontal para tablas en móviles */
+}
+
+.login-footer table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  border: 1px solid #e0e0e0;
+  min-width: 600px; /* Mínimo para legibilidad */
+}
+
+.login-footer th, 
+.login-footer td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  vertical-align: top;
+}
+
+.login-footer th {
+  background-color: #f8f8f8;
+}
+
+.footer-brand {
+  text-align: center;
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+/* Media Queries para ajustes específicos */
+@media (max-width: 768px) {
+  .login-container {
+    width: 95%;
+    margin: 0.5rem auto;
+  }
+
+  .toggle-section {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .google-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-header {
+    padding: 1rem;
+  }
+
+  .login-content {
+    padding: 1rem;
+  }
+
+  .benefits-section ul {
+    padding-left: 1rem;
+  }
+
+  .divider {
+    margin: 1rem 0;
+  }
+
+  /* Opcional: Reorganización de la tabla para móviles */
+  .login-footer table {
+    display: block;
+  }
+  
+  .login-footer tr {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+  }
+  
+  .login-footer th, 
+  .login-footer td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+  }
+}
+
+
+/* Estilo personalizado para el scroll (opcional) */
+.login-container::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .login-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  .login-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  .login-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }

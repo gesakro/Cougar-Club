@@ -1,0 +1,25 @@
+.search-overlay {
+    background: linear-gradient(to bottom, #2b0000, #000000);
+    color: white;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+  .overlay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .trending .tags span {
+    margin-right: 10px;
+    background: #444;
+    padding: 5px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .overlay-footer {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 0.8rem;
+    color: #ccc;
+  }
+  
