@@ -9,11 +9,20 @@ const app = express();
 // Conectar a MongoDB Atlas
 connectDB();
 
-// Middlewares
+// Definir los orígenes permitidos
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:8080'];
+
 app.use(express.json());
 app.use(
   cors({
-    origin: 'http://localhost:3000',
+    origin: function (origin, callback) {
+      // Permitir solicitudes sin origen (por ejemplo, herramientas como Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        return callback(new Error(`El origen ${origin} no está permitido por CORS`), false);
+      }
+      return callback(null, true);
+    }
   })
 );
 
