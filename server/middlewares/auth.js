@@ -15,7 +15,8 @@ exports.verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded.user; // Contendrá id, email, rol y, si aplica, compania_id
+    // Se espera que decoded.user contenga: id, email, rol y, en caso de Gerente, compania_id
+    req.user = decoded.user;
     next();
   } catch (err) {
     res.status(401).json({ msg: 'Token no válido' });
@@ -31,16 +32,44 @@ exports.authorizeRole = (...roles) => {
   };
 };
 
-// Middleware para comprobar que la entidad que se está gestionando
-// corresponde a la compañía del Gerente (solo para usuarios con rol "Gerente")
 exports.checkCompanyOwnership = (req, res, next) => {
-  if (req.user.rol === 'Gerente') {
-    // Suponemos que en una entidad relacionada a una compañía, el ID de la compañía se transmite en:
-    // req.body.compania o req.body.compania_id. Ajusta según cada modelo.
-    const companyIdFromBody = req.body.compania || req.body.compania_id;
-    if (!companyIdFromBody || companyIdFromBody.toString() !== req.user.compania_id.toString()) {
-      return res.status(403).json({ msg: 'Acceso prohibido: la compañía no coincide' });
-    }
+  // Si el usuario es Administrador, se le permite el acceso sin ningún chequeo adicional.
+  if (req.user.rol === 'Administrador') {
+    return next();
   }
-  next();
+
+  // Para los usuarios con rol "Gerente", se valida que la compañía enviada coincida con la asignada.
+  if (req.user.rol === 'Gerente') {
+    // Se busca el ID de compañía en diferentes partes de la solicitud
+    const companyId =
+      req.body.compania ||
+      req.body.compania_id ||
+      req.params.compania_id ||
+      req.query.compania_id;
+    if (!companyId) {
+      return res.status(400).json({ msg: 'ID de compañía no proporcionado' });
+    }
+    if (companyId.toString() !== req.user.compania_id?.toString()) {
+      return res
+        .status(403)
+        .json({ msg: 'Acceso prohibido: la compañía no coincide' });
+    }
+    return next();
+  }
+
+  // Para los usuarios con rol "Usuario", se asume que solo deben acceder a sus propios datos.
+  if (req.user.rol === 'Usuario') {
+    // Se verifica que el ID del usuario que se pretende modificar/consultar (por ejemplo, enviado en params o body)
+    // coincida con el ID del usuario autenticado. Ajusta según la estructura de tus rutas.
+    const userIdFromRequest = req.params.userId || req.body.userId;
+    if (userIdFromRequest && userIdFromRequest.toString() !== req.user.id.toString()) {
+      return res
+        .status(403)
+        .json({ msg: 'Acceso prohibido: no puedes acceder a los datos de otro usuario' });
+    }
+    return next();
+  }
+
+  // Si se llega hasta aquí y el rol no es reconocido, se deniega el acceso.
+  return res.status(403).json({ msg: 'Acceso prohibido: rol no reconocido' });
 };

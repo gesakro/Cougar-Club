@@ -1,285 +1,364 @@
 <template>
-    <div>
-      <AppNavbar />
-      <div class="signup-container">
-        <main class="signup-content">
-          <div class="signup-card">
-            <header class="signup-header">
-              <h2>Crear Cuenta</h2>
-              <p>Únete a Cougar Club</p>
-            </header>
-            
-            <form class="signup-form" @submit.prevent="handleSignup">
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="firstname">Nombre</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-user"></i>
-                    <input type="text" id="firstname" v-model="firstname" placeholder="Tu nombre" required />
-                  </div>
-                </div>
-                
-                <div class="form-group">
-                  <label for="lastname">Apellido</label>
-                  <div class="input-with-icon">
-                    <i class="fas fa-user"></i>
-                    <input type="text" id="lastname" v-model="lastname" placeholder="Tu apellido" required />
-                  </div>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="email">Email</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-envelope"></i>
-                  <input type="email" id="email" v-model="email" placeholder="ejemplo@correo.com" required />
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="password">Contraseña</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-lock"></i>
-                  <input 
-                    :type="showPassword ? 'text' : 'password'" 
-                    id="password" 
-                    v-model="password" 
-                    placeholder="Crea una contraseña segura" 
-                    required 
-                  />
-                  <button 
-                    type="button" 
-                    class="toggle-password" 
-                    @click="showPassword = !showPassword"
-                  >
-                    <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                  </button>
-                </div>
-                <div class="password-strength" v-if="password">
-                  <div class="strength-bar">
-                    <div class="strength-indicator" :style="{ width: passwordStrength + '%', backgroundColor: passwordStrengthColor }"></div>
-                  </div>
-                  <span :style="{ color: passwordStrengthColor }">{{ passwordStrengthText }}</span>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="confirmPassword">Confirmar Contraseña</label>
-                <div class="input-with-icon">
-                  <i class="fas fa-lock"></i>
-                  <input 
-                    :type="showConfirmPassword ? 'text' : 'password'" 
-                    id="confirmPassword" 
-                    v-model="confirmPassword" 
-                    placeholder="Confirma tu contraseña" 
-                    required 
-                  />
-                  <button 
-                    type="button" 
-                    class="toggle-password" 
-                    @click="showConfirmPassword = !showConfirmPassword"
-                  >
-                    <i :class="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                  </button>
-                </div>
-                <p class="password-match" v-if="password && confirmPassword" :class="{ match: passwordsMatch, mismatch: !passwordsMatch }">
-                  <i :class="passwordsMatch ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
-                  {{ passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}
-                </p>
-              </div>
-              
-              <div class="form-checkbox">
-                <input type="checkbox" id="terms" v-model="acceptTerms" required />
-                <label for="terms">Acepto los <a href="#">Términos y Condiciones</a> y la <a href="#">Política de Privacidad</a></label>
-              </div>
-              
-              <div class="form-checkbox">
-                <input type="checkbox" id="newsletter" v-model="subscribeNewsletter" />
-                <label for="newsletter">Quiero recibir noticias, ofertas y promociones</label>
-              </div>
-              
-              <button type="submit" class="signup-btn" :disabled="!formValid">Crear Cuenta</button>
-              
-              <div class="divider">
-                <span>O regístrate con</span>
-              </div>
-              
-              <div class="social-signup">
-                <button type="button" class="google-btn">
-                  <i class="fab fa-google"></i>
-                  Google
-                </button>
-                <button type="button" class="facebook-btn">
-                  <i class="fab fa-facebook-f"></i>
-                  Facebook
-                </button>
-              </div>
-              
-              <p class="login-link">
-                ¿Ya tienes una cuenta? <router-link to="/login">Iniciar Sesión</router-link>
-              </p>
-            </form>
-          </div>
+  <div>
+    <AppNavbar />
+    <div class="signup-container">
+      <main class="signup-content">
+        <div class="signup-card">
+          <header class="signup-header">
+            <h2>Crear Cuenta</h2>
+            <p>Únete a Cougar Club</p>
+          </header>
           
-          <div class="benefits-card">
-            <div class="benefits-content">
-              <h3>Ventajas de Cougar Club</h3>
-              <ul>
-                <li>
-                  <i class="fas fa-shopping-bag"></i>
-                  <span>Accede a tu historial de compras y productos</span>
-                </li>
-                <li>
-                  <i class="fas fa-user-circle"></i>
-                  <span>Gestiona tu información personal</span>
-                </li>
-                <li>
-                  <i class="fas fa-bell"></i>
-                  <span>Recibe notificaciones y ofertas exclusivas</span>
-                </li>
-                <li>
-                  <i class="fas fa-tag"></i>
-                  <span>Descuentos especiales para miembros</span>
-                </li>
-                <li>
-                  <i class="fas fa-shield-alt"></i>
-                  <span>Protección de datos y seguridad garantizada</span>
-                </li>
-              </ul>
-              <div class="brand-logo">
-                <span>Cougar Club</span>
+          <form class="signup-form" @submit.prevent="handleSignup">
+            <div v-if="errorMessage" class="error-message">
+              <i class="fas fa-exclamation-circle"></i>
+              {{ errorMessage }}
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstname">Nombre</label>
+                <div class="input-with-icon">
+                  <i class="fas fa-user"></i>
+                  <input type="text" id="firstname" v-model="perfil.nombre" placeholder="Tu nombre" required />
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="lastname">Apellido</label>
+                <div class="input-with-icon">
+                  <i class="fas fa-user"></i>
+                  <input type="text" id="lastname" v-model="perfil.apellido" placeholder="Tu apellido" required />
+                </div>
               </div>
             </div>
-          </div>
-        </main>
+            
+            <div class="form-group">
+              <label for="email">Email</label>
+              <div class="input-with-icon">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="email" v-model="email" placeholder="ejemplo@correo.com" required />
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="password">Contraseña</label>
+              <div class="input-with-icon">
+                <i class="fas fa-lock"></i>
+                <input 
+                  :type="showPassword ? 'text' : 'password'" 
+                  id="password" 
+                  v-model="password" 
+                  placeholder="Crea una contraseña segura" 
+                  required 
+                />
+                <button 
+                  type="button" 
+                  class="toggle-password" 
+                  @click="showPassword = !showPassword"
+                >
+                  <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+              <div class="password-strength" v-if="password">
+                <div class="strength-bar">
+                  <div class="strength-indicator" :style="{ width: passwordStrength + '%', backgroundColor: passwordStrengthColor }"></div>
+                </div>
+                <span :style="{ color: passwordStrengthColor }">{{ passwordStrengthText }}</span>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="confirmPassword">Confirmar Contraseña</label>
+              <div class="input-with-icon">
+                <i class="fas fa-lock"></i>
+                <input 
+                  :type="showConfirmPassword ? 'text' : 'password'" 
+                  id="confirmPassword" 
+                  v-model="confirmPassword" 
+                  placeholder="Confirma tu contraseña" 
+                  required 
+                />
+                <button 
+                  type="button" 
+                  class="toggle-password" 
+                  @click="showConfirmPassword = !showConfirmPassword"
+                >
+                  <i :class="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+              <p class="password-match" v-if="password && confirmPassword" :class="{ match: passwordsMatch, mismatch: !passwordsMatch }">
+                <i :class="passwordsMatch ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
+                {{ passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}
+              </p>
+            </div>
+            
+            <div class="form-checkbox">
+              <input type="checkbox" id="terms" v-model="acceptTerms" required />
+              <label for="terms">Acepto los <a href="#">Términos y Condiciones</a> y la <a href="#">Política de Privacidad</a></label>
+            </div>
+            
+            <div class="form-checkbox">
+              <input type="checkbox" id="newsletter" v-model="subscribeNewsletter" />
+              <label for="newsletter">Quiero recibir noticias, ofertas y promociones</label>
+            </div>
+            
+            <button type="submit" class="signup-btn" :disabled="!formValid || isLoading">
+              <span v-if="isLoading"><i class="fas fa-spinner fa-spin"></i> Registrando...</span>
+              <span v-else>Crear Cuenta</span>
+            </button>
+            
+            <div class="divider">
+              <span>O regístrate con</span>
+            </div>
+            
+            <div class="social-signup">
+              <button type="button" class="google-btn">
+                <i class="fab fa-google"></i>
+                Google
+              </button>
+              <button type="button" class="facebook-btn">
+                <i class="fab fa-facebook-f"></i>
+                Facebook
+              </button>
+            </div>
+            
+            <p class="login-link">
+              ¿Ya tienes una cuenta? <router-link to="/login">Iniciar Sesión</router-link>
+            </p>
+          </form>
+        </div>
         
-        <footer class="signup-footer">
-          <div class="footer-links">
-            <div class="footer-column">
-              <h4>Ayuda</h4>
-              <ul>
-                <li><a href="#">Centro de ayuda</a></li>
-                <li><a href="#">Contacto</a></li>
-                <li><a href="#">Preguntas frecuentes</a></li>
-              </ul>
-            </div>
-            <div class="footer-column">
-              <h4>Servicios</h4>
-              <ul>
-                <li><a href="#">Envíos</a></li>
-                <li><a href="#">Devoluciones</a></li>
-                <li><a href="#">Garantía</a></li>
-              </ul>
-            </div>
-            <div class="footer-column">
-              <h4>Sobre Cougar Club</h4>
-              <ul>
-                <li><a href="#">Nuestra historia</a></li>
-                <li><a href="#">Sostenibilidad</a></li>
-                <li><a href="#">Trabaja con nosotros</a></li>
-              </ul>
-            </div>
-            <div class="footer-column">
-              <h4>Suscríbete</h4>
-              <p>Recibe noticias y ofertas exclusivas</p>
-              <div class="subscribe-form">
-                <input type="email" placeholder="Tu email" />
-                <button>Suscribir</button>
-              </div>
+        <div class="benefits-card">
+          <div class="benefits-content">
+            <h3>Ventajas de Cougar Club</h3>
+            <ul>
+              <li>
+                <i class="fas fa-shopping-bag"></i>
+                <span>Accede a tu historial de compras y productos</span>
+              </li>
+              <li>
+                <i class="fas fa-user-circle"></i>
+                <span>Gestiona tu información personal</span>
+              </li>
+              <li>
+                <i class="fas fa-bell"></i>
+                <span>Recibe notificaciones y ofertas exclusivas</span>
+              </li>
+              <li>
+                <i class="fas fa-tag"></i>
+                <span>Descuentos especiales para miembros</span>
+              </li>
+              <li>
+                <i class="fas fa-shield-alt"></i>
+                <span>Protección de datos y seguridad garantizada</span>
+              </li>
+            </ul>
+            <div class="brand-logo">
+              <span>Cougar Club</span>
             </div>
           </div>
-          <div class="footer-bottom">
-            <p class="footer-brand">Cougar Club &copy; 2025</p>
-            <div class="social-icons">
-              <a href="#"><i class="fab fa-instagram"></i></a>
-              <a href="#"><i class="fab fa-facebook-f"></i></a>
-              <a href="#"><i class="fab fa-twitter"></i></a>
-              <a href="#"><i class="fab fa-youtube"></i></a>
+        </div>
+      </main>
+      
+      <footer class="signup-footer">
+        <div class="footer-links">
+          <div class="footer-column">
+            <h4>Ayuda</h4>
+            <ul>
+              <li><a href="#">Centro de ayuda</a></li>
+              <li><a href="#">Contacto</a></li>
+              <li><a href="#">Preguntas frecuentes</a></li>
+            </ul>
+          </div>
+          <div class="footer-column">
+            <h4>Servicios</h4>
+            <ul>
+              <li><a href="#">Envíos</a></li>
+              <li><a href="#">Devoluciones</a></li>
+              <li><a href="#">Garantía</a></li>
+            </ul>
+          </div>
+          <div class="footer-column">
+            <h4>Sobre Cougar Club</h4>
+            <ul>
+              <li><a href="#">Nuestra historia</a></li>
+              <li><a href="#">Sostenibilidad</a></li>
+              <li><a href="#">Trabaja con nosotros</a></li>
+            </ul>
+          </div>
+          <div class="footer-column">
+            <h4>Suscríbete</h4>
+            <p>Recibe noticias y ofertas exclusivas</p>
+            <div class="subscribe-form">
+              <input type="email" placeholder="Tu email" />
+              <button>Suscribir</button>
             </div>
           </div>
-        </footer>
-      </div>
-      <AppFooter />
+        </div>
+        <div class="footer-bottom">
+          <p class="footer-brand">Cougar Club &copy; 2025</p>
+          <div class="social-icons">
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-youtube"></i></a>
+          </div>
+        </div>
+      </footer>
     </div>
-  </template>
-  
-  <script>
-  import AppFooter from '@/components/layout/AppFooter.vue';
-  import AppNavbar from '@/components/layout/AppNavbar.vue';
-  
-  export default {
-    name: 'UserSignup',
-    components: {
-      AppNavbar,
-      AppFooter
-    },
-    data() {
-      return {
-        firstname: '',
-        lastname: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        showPassword: false,
-        showConfirmPassword: false,
-        acceptTerms: false,
-        subscribeNewsletter: false
-      };
-    },
-    computed: {
-      passwordStrength() {
-        if (!this.password) return 0;
-        
-        let score = 0;
-        // Longitud de la contraseña
-        if (this.password.length > 6) score += 20;
-        if (this.password.length > 10) score += 20;
-        
-        // Complejidad
-        if (/[A-Z]/.test(this.password)) score += 20;  // Mayúsculas
-        if (/[0-9]/.test(this.password)) score += 20;  // Números
-        if (/[^A-Za-z0-9]/.test(this.password)) score += 20;  // Caracteres especiales
-        
-        return score;
-      },
-      passwordStrengthColor() {
-        if (this.passwordStrength < 40) return '#FF4D4D';  // Débil
-        if (this.passwordStrength < 80) return '#FFA500';  // Media
-        return '#4CAF50';  // Fuerte
-      },
-      passwordStrengthText() {
-        if (this.passwordStrength < 40) return 'Débil';
-        if (this.passwordStrength < 80) return 'Media';
-        return 'Fuerte';
-      },
-      passwordsMatch() {
-        return this.password === this.confirmPassword && this.password.length > 0;
-      },
-      formValid() {
-        return (
-          this.firstname.trim() !== '' &&
-          this.lastname.trim() !== '' &&
-          this.email.trim() !== '' &&
-          this.password.trim() !== '' &&
-          this.confirmPassword.trim() !== '' &&
-          this.passwordsMatch &&
-          this.acceptTerms
-        );
+    <AppFooter />
+  </div>
+</template>
+
+<script>
+import AppFooter from '@/components/layout/AppFooter.vue';
+import AppNavbar from '@/components/layout/AppNavbar.vue';
+import axios from 'axios';
+
+export default {
+  name: 'UserSignup',
+  components: {
+    AppNavbar,
+    AppFooter
+  },
+  data() {
+    return {
+      email: '',
+      password: '',
+      confirmPassword: '',
+      showPassword: false,
+      showConfirmPassword: false,
+      acceptTerms: false,
+      subscribeNewsletter: false,
+      isLoading: false,
+      errorMessage: '',
+      successMessage: '',
+      perfil: {
+        nombre: '',
+        apellido: '',
+        telefono: '',
+        direccion: '',
+        preferencias: {
+          newsletter: false
+        }
       }
+    };
+  },
+  computed: {
+    passwordStrength() {
+      if (!this.password) return 0;
+      
+      let score = 0;
+      // Longitud de la contraseña
+      if (this.password.length > 6) score += 20;
+      if (this.password.length > 10) score += 20;
+      
+      // Complejidad
+      if (/[A-Z]/.test(this.password)) score += 20;  // Mayúsculas
+      if (/[0-9]/.test(this.password)) score += 20;  // Números
+      if (/[^A-Za-z0-9]/.test(this.password)) score += 20;  // Caracteres especiales
+      
+      return score;
     },
-    methods: {
-      handleSignup() {
-        console.log('Signup attempt with:', {
-          firstname: this.firstname,
-          lastname: this.lastname,
+    passwordStrengthColor() {
+      if (this.passwordStrength < 40) return '#FF4D4D';  // Débil
+      if (this.passwordStrength < 80) return '#FFA500';  // Media
+      return '#4CAF50';  // Fuerte
+    },
+    passwordStrengthText() {
+      if (this.passwordStrength < 40) return 'Débil';
+      if (this.passwordStrength < 80) return 'Media';
+      return 'Fuerte';
+    },
+    passwordsMatch() {
+      return this.password === this.confirmPassword && this.password.length > 0;
+    },
+    formValid() {
+      return (
+        this.perfil.nombre.trim() !== '' &&
+        this.perfil.apellido.trim() !== '' &&
+        this.email.trim() !== '' &&
+        this.password.trim() !== '' &&
+        this.confirmPassword.trim() !== '' &&
+        this.passwordsMatch &&
+        this.acceptTerms
+      );
+    }
+  },
+  methods: {
+    async handleSignup() {
+      if (!this.formValid) return;
+
+      this.isLoading = true;
+      this.errorMessage = '';
+      this.successMessage = '';
+
+      try {
+        // Preparar los datos de registro en el formato que espera el backend
+        const signupData = {
           email: this.email,
-          subscribeNewsletter: this.subscribeNewsletter
-        });
-        // Aquí añadirías la lógica de registro
+          password: this.password,
+          // El rol por defecto será "Usuario", como se maneja en el backend
+          perfil: {
+            nombre: this.perfil.nombre,
+            apellido: this.perfil.apellido,
+            telefono: this.perfil.telefono || '',
+            direccion: this.perfil.direccion || '',
+            preferencias: {
+              newsletter: this.subscribeNewsletter
+            }
+          }
+        };
+
+        console.log('Datos a enviar:', signupData);
+
+        // Llamada a la API para registrar al usuario
+        const response = await axios.post('http://localhost:5000/api/auth/signup', signupData);
+
+        // Si el registro es exitoso, guardar el token en localStorage
+        if (response.data && response.data.token) {
+          localStorage.setItem('token', response.data.token);
+          
+          // Establecer mensaje de éxito
+          this.successMessage = '¡Cuenta creada exitosamente!';
+          
+          // Redirigir al usuario al dashboard o página principal después de un breve retraso
+          setTimeout(() => {
+            this.$router.push('/');
+          }, 1000);
+        }
+      } catch (error) {
+        console.error('Error en el registro:', error);
+
+        // Mostrar información más detallada del error
+        if (error.response) {
+          // El servidor respondió con un código de estado diferente a 2xx
+          console.error('Respuesta del servidor:', error.response.data);
+          console.error('Código de estado:', error.response.status);
+          console.error('Cabeceras:', error.response.headers);
+
+          if (error.response.data && error.response.data.message) {
+            this.errorMessage = error.response.data.message;
+          } else {
+            this.errorMessage = `Error ${error.response.status}: ${JSON.stringify(error.response.data)}`;
+          }
+        } else if (error.request) {
+          // La solicitud se hizo pero no se recibió respuesta
+          console.error('No se recibió respuesta del servidor:', error.request);
+          this.errorMessage = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+        } else {
+          // Algo ocurrió al configurar la solicitud
+          console.error('Error de configuración:', error.message);
+          this.errorMessage = 'Error al configurar la solicitud: ' + error.message;
+        }
+      } finally {
+        this.isLoading = false;
       }
     }
-  };
-  </script>
+  }
+};
+</script>
   
   <style>
   /* Estilos para la página de registro (SignUp) */
