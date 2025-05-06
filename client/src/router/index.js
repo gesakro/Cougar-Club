@@ -77,6 +77,14 @@ const routes = [
     meta: {
       title: 'Recuperar contraseña | Cougar Club'
     }
+  },
+  {
+    path: '/gestionar-comercio',
+    name: 'GestionarComercio',
+    component: () => import('@/views/Admin/companyManagement.vue'),
+    meta: {
+      title: 'Recuperar contraseña | Cougar Club'
+    }
   }
   
 ]
