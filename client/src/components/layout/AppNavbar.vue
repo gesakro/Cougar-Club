@@ -2,6 +2,7 @@
 import AppMenu from "./AppMenu.vue";
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
+import CartService from '@/services/CartService'; // Importar CartService
 
 export default {
   name: "NavBar",
@@ -12,7 +13,7 @@ export default {
     // Variables reactivas
     const searchQuery = ref("");
     const searchActive = ref(false);
-    const cartItems = ref(2);
+    const cartItems = ref(0); // Inicializado a 0
     const mobileExpanded = ref(false);
     const userMenuOpen = ref(false);
     const userName = ref("");
@@ -77,6 +78,11 @@ export default {
       }
     };
     
+    // Método para actualizar el contador del carrito
+    const updateCartCounter = () => {
+      cartItems.value = CartService.getCartItemCount();
+    };
+    
     // Lifecycle hooks
     onMounted(() => {
       document.addEventListener('click', handleClickOutside);
@@ -89,11 +95,18 @@ export default {
           getUserInfo();
         }
       });
+      
+      // Escuchar el evento cart-updated para actualizar el contador del carrito
+      window.addEventListener('cart-updated', updateCartCounter);
+      
+      // Inicializar el contador del carrito
+      updateCartCounter();
     });
     
     onBeforeUnmount(() => {
       document.removeEventListener('click', handleClickOutside);
       window.removeEventListener('storage', getUserInfo);
+      window.removeEventListener('cart-updated', updateCartCounter);
     });
     
     return {
