@@ -151,6 +151,7 @@
 <script>
 import AppFooter from '@/components/layout/AppFooter.vue';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
+import axios from 'axios';
 
 export default {
   name: 'UserLogin',
@@ -163,14 +164,127 @@ export default {
       email: '',
       password: '',
       showPassword: false,
-      rememberMe: false
+      rememberMe: false,
+      isLoading: false,
+      errorMessage: '',
+      successMessage: '',
+      userToken: '',
+      userRole: ''
     };
   },
-  methods: {
-    handleLogin() {
-      console.log('Login attempt with:', this.email, this.password);
-      // Aquí añadirías la lógica de autenticación
+  computed: {
+    formValid() {
+      return this.email.trim() !== '' && this.password.trim() !== '';
     }
+  },
+  methods: {
+    // Actualización para el método handleLogin en el componente UserLogin.vue
+
+    async handleLogin() {
+  if (!this.formValid) return;
+  
+  this.isLoading = true;
+  this.errorMessage = '';
+  this.successMessage = '';
+
+  try {
+    // Preparar los datos de login
+    const loginData = {
+      email: this.email,
+      password: this.password
+    };
+
+    console.log('Intentando iniciar sesión con:', this.email);
+
+    // Llamada a la API para autenticar al usuario
+    const response = await axios.post('http://localhost:5000/api/auth/login', loginData);
+
+    // Si la autenticación es exitosa, guardar el token en localStorage
+    if (response.data && response.data.token) {
+      // Guardar token en localStorage
+      localStorage.setItem('token', response.data.token);
+      
+      // Decodificar el token para obtener la información del usuario
+      const token = response.data.token;
+      const tokenParts = token.split('.');
+      const payload = JSON.parse(atob(tokenParts[1]));
+      
+      // Obtener información del usuario desde el payload del token
+      const userRole = payload.user.rol || 'Usuario';
+      const userName = payload.user.nombre || 'Usuario';
+      const userEmail = payload.user.email || this.email;
+      
+      // Guardar información adicional del usuario
+      localStorage.setItem('userRole', userRole);
+      localStorage.setItem('userName', userName);
+      localStorage.setItem('userEmail', userEmail);
+      
+      // Si el usuario es Gerente, guardar también su compania_id
+      if (userRole === 'Gerente' && payload.user.compania_id) {
+        localStorage.setItem('userCompany', payload.user.compania_id);
+      }
+      
+      // Si el usuario marcó "recordarme", guardar el email
+      if (this.rememberMe) {
+        localStorage.setItem('rememberedEmail', this.email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
+      
+      // Mostrar token y rol de usuario en la consola
+      console.log('Token asignado:', response.data.token);
+      console.log('Tipo de usuario:', userRole);
+      
+      // Establecer mensaje de éxito con información del usuario
+      this.successMessage = `¡Bienvenido ${userName}! Inicio de sesión exitoso.`;
+      
+      // Redirigir al usuario al dashboard o página principal después de un breve retraso
+      setTimeout(() => {
+        this.$router.push('/');
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('Error en el inicio de sesión:', error);
+
+    // Mostrar información detallada del error
+    if (error.response) {
+      // El servidor respondió con un código de estado diferente a 2xx
+      console.error('Respuesta del servidor:', error.response.data);
+      console.error('Código de estado:', error.response.status);
+
+      if (error.response.status === 401) {
+        this.errorMessage = 'Email o contraseña incorrectos. Por favor intenta de nuevo.';
+      } else if (error.response.data && error.response.data.message) {
+        this.errorMessage = error.response.data.message;
+      } else {
+        this.errorMessage = `Error ${error.response.status}: ${JSON.stringify(error.response.data)}`;
+      }
+    } else if (error.request) {
+      // La solicitud se hizo pero no se recibió respuesta
+      console.error('No se recibió respuesta del servidor:', error.request);
+      this.errorMessage = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+    } else {
+      // Algo ocurrió al configurar la solicitud
+      console.error('Error de configuración:', error.message);
+      this.errorMessage = 'Error al configurar la solicitud: ' + error.message;
+    }
+  } finally {
+    this.isLoading = false;
+  }
+},
+    
+    // Método opcional para cargar el email recordado al montar el componente
+    checkForRememberedUser() {
+      const rememberedEmail = localStorage.getItem('rememberedEmail');
+      if (rememberedEmail) {
+        this.email = rememberedEmail;
+        this.rememberMe = true;
+      }
+    }
+  },
+  mounted() {
+    // Verificar si hay un email guardado cuando se carga el componente
+    this.checkForRememberedUser();
   }
 };
 </script>
