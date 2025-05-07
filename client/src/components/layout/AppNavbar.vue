@@ -227,15 +227,14 @@ export default {
           </template>
           
           <!-- Enlaces específicos para gerentes -->
+
           <template v-if="isLoggedIn && userRole === 'Gerente'">
             <div class="dropdown-divider"></div>
-            <router-link to="/mis-ventas" class="dropdown-item">
-              <i class="fas fa-tags"></i> Mis Ventas
-            </router-link>
-            <router-link to="/inventario" class="dropdown-item">
-              <i class="fas fa-boxes"></i> Inventario
+            <router-link to="/gestionar-ecomercio" class="dropdown-item">
+              <i class="fas fa-store"></i> Gestionar Comercio
             </router-link>
           </template>
+
           
           <div class="dropdown-divider" v-if="isLoggedIn"></div>
           

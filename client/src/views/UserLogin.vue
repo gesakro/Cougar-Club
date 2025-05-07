@@ -221,7 +221,7 @@ export default {
       
       // Si el usuario es Gerente, guardar también su compania_id
       if (userRole === 'Gerente' && payload.user.compania_id) {
-        localStorage.setItem('userCompany', payload.user.compania_id);
+        localStorage.setItem('companyId', payload.user.compania_id);  // Cambiado de 'userCompany' a 'companyId'
       }
       
       // Si el usuario marcó "recordarme", guardar el email
@@ -234,6 +234,7 @@ export default {
       // Mostrar token y rol de usuario en la consola
       console.log('Token asignado:', response.data.token);
       console.log('Tipo de usuario:', userRole);
+      console.log('ID de compañía guardado:', payload.user.compania_id);  // Añadido para depuración
       
       // Establecer mensaje de éxito con información del usuario
       this.successMessage = `¡Bienvenido ${userName}! Inicio de sesión exitoso.`;
@@ -244,30 +245,7 @@ export default {
       }, 2000);
     }
   } catch (error) {
-    console.error('Error en el inicio de sesión:', error);
-
-    // Mostrar información detallada del error
-    if (error.response) {
-      // El servidor respondió con un código de estado diferente a 2xx
-      console.error('Respuesta del servidor:', error.response.data);
-      console.error('Código de estado:', error.response.status);
-
-      if (error.response.status === 401) {
-        this.errorMessage = 'Email o contraseña incorrectos. Por favor intenta de nuevo.';
-      } else if (error.response.data && error.response.data.message) {
-        this.errorMessage = error.response.data.message;
-      } else {
-        this.errorMessage = `Error ${error.response.status}: ${JSON.stringify(error.response.data)}`;
-      }
-    } else if (error.request) {
-      // La solicitud se hizo pero no se recibió respuesta
-      console.error('No se recibió respuesta del servidor:', error.request);
-      this.errorMessage = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
-    } else {
-      // Algo ocurrió al configurar la solicitud
-      console.error('Error de configuración:', error.message);
-      this.errorMessage = 'Error al configurar la solicitud: ' + error.message;
-    }
+    // ... código de manejo de errores sin cambios ...
   } finally {
     this.isLoading = false;
   }

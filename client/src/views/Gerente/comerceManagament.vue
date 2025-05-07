@@ -12,17 +12,14 @@ export default {
   },
   data() {
     return {
-      // Datos del comercio
-      commerce: null,
+      // Datos de la compañía
+      company: null,
       loading: true,
+      currentUserCompanyId: localStorage.getItem('companyId') || null,
       
-      // Información del usuario
-      userId: null,
-      companyId: null,
-      
-      // Modal de comercio
-      showCommerceModal: false,
-      currentCommerce: {
+      // Modal de compañía
+      showCompanyModal: false,
+      currentCompany: {
         nombre: '',
         email: '',
         plan: 'Mensual',
@@ -63,10 +60,7 @@ export default {
       // Modal de confirmación
       showDeleteModal: false,
       deleteType: '', // 'product' o 'brand'
-      itemToDelete: null,
-      
-      // Opciones
-      planOptions: ['Mensual', 'Anual']
+      itemToDelete: null
     };
   },
   
@@ -75,20 +69,42 @@ export default {
       return AuthService.getUserRole();
     },
     
-    isManager() {
+    isGerente() {
       return this.userRole === 'Gerente';
     },
     
-    hasPermission() {
-      return this.isManager && this.companyId;
+    hasCompanyAccess() {
+      return this.isGerente && this.currentUserCompanyId;
+    },
+    
+    planOptions() {
+      return ['Mensual', 'Anual'];
     }
   },
   
   created() {
-    this.getUserInfo();
+    this.verifyAccess();
+    if (this.hasCompanyAccess) {
+      this.fetchCompanyData();
+    }
   },
   
   methods: {
+    // Verificar acceso y redireccionar si no es gerente
+    verifyAccess() {
+  if (!this.isGerente || !this.currentUserCompanyId) {
+    // Redirigir a página de acceso denegado o dashboard
+    this.$router.push('/dashboard');
+    
+    // Verificar si $toast está disponible antes de usarlo
+    if (this.$toast) {
+      this.$toast.error('Acceso denegado. Solo los gerentes pueden acceder a esta página.');
+    } else {
+      console.error('Acceso denegado. Solo los gerentes pueden acceder a esta página.');
+    }
+  }
+},
+    
     // Métodos de utilidad
     formatDate(dateString) {
       if (!dateString) return 'N/D';
@@ -104,93 +120,83 @@ export default {
       return parseFloat(price).toFixed(2);
     },
     
-    // Obtener información del usuario y su compañía
-    async getUserInfo() {
-      try {
-        // Obtener el ID del usuario del localStorage o de donde esté almacenado
-        this.userId = localStorage.getItem('userId');
-        // Obtener el ID de la compañía a la que pertenece el gerente
-        this.companyId = localStorage.getItem('companyId');
-        
-        if (!this.companyId || !this.isManager) {
-          this.$router.push('/dashboard');
-          this.$toast.error('No tienes permisos para acceder a esta página');
-          return;
-        }
-        
-        // Cargar los datos del comercio
-        await this.fetchCommerce();
-        
-      } catch (error) {
-        console.error('Error al obtener información del usuario:', error);
-        this.$toast.error('Error al cargar los datos del usuario');
-      }
-    },
-    
-    // Métodos para el comercio
-    async fetchCommerce() {
+    // Métodos para la compañía
+    async fetchCompanyData() {
       this.loading = true;
       try {
-        const response = await axios.get(`http://localhost:5000/api/companies/${this.companyId}`);
-        this.commerce = response.data;
-        this.loading = false;
+        // Obtener los datos de la compañía del gerente
+        const response = await axios.get(`http://localhost:5000/api/companies/${this.currentUserCompanyId}`);
+        this.company = response.data;
         
-        // También cargar productos y marcas
-        await this.fetchProducts();
-        await this.fetchBrands();
+        // Obtener productos de la compañía
+        await this.fetchCompanyProducts();
+        
+        // Obtener marcas de la compañía
+        await this.fetchCompanyBrands();
       } catch (error) {
-        console.error('Error al cargar datos del comercio:', error);
-        this.$toast.error('Error al cargar los datos del comercio');
+        console.error('Error al cargar datos de la compañía:', error);
+        
+        // Verificar si $toast está disponible antes de usarlo
+        if (this.$toast) {
+          this.$toast.error('Error al cargar los datos de la compañía');
+        } else {
+          console.error('Error al cargar los datos de la compañía');
+        }
+      } finally {
         this.loading = false;
       }
     },
     
-    openCommerceModal() {
-      this.currentCommerce = { ...this.commerce };
-      this.showCommerceModal = true;
+    openCompanyModal() {
+      this.currentCompany = { ...this.company };
+      this.showCompanyModal = true;
     },
     
-    closeCommerceModal() {
-      this.showCommerceModal = false;
+    closeCompanyModal() {
+      this.showCompanyModal = false;
     },
     
-    async saveCommerce() {
+    async saveCompany() {
       try {
-        // Actualizar comercio existente
-        await axios.put(`http://localhost:5000/api/companies/${this.companyId}`, this.currentCommerce);
-        this.$toast.success('Comercio actualizado con éxito');
+        // Actualizar compañía existente
+        await axios.put(`http://localhost:5000/api/companies/${this.currentUserCompanyId}`, this.currentCompany);
+        
+        if (this.$toast) {
+          this.$toast.success('Compañía actualizada con éxito');
+        }
         
         // Actualizar datos locales
-        this.commerce = { ...this.currentCommerce };
+        this.company = { ...this.currentCompany };
         
         // Cerrar el modal
-        this.closeCommerceModal();
+        this.closeCompanyModal();
       } catch (error) {
-        console.error('Error al guardar comercio:', error);
-        this.$toast.error(error.response?.data?.message || 'Error al guardar el comercio');
+        console.error('Error al guardar compañía:', error);
+        
+        const errorMessage = error.response?.data?.message || 'Error al guardar la compañía';
+        if (this.$toast) {
+          this.$toast.error(errorMessage);
+        } else {
+          console.error(errorMessage);
+        }
       }
     },
     
     // Métodos para productos
-    async fetchProducts() {
+    async fetchCompanyProducts() {
       this.loadingProducts = true;
       try {
-        const response = await axios.get(`http://localhost:5000/api/products?compania_id=${this.companyId}`);
+        const response = await axios.get(`http://localhost:5000/api/products?compania_id=${this.currentUserCompanyId}`);
         this.companyProducts = response.data;
       } catch (error) {
         console.error('Error al cargar productos:', error);
-        this.$toast.error('Error al cargar los productos');
+        
+        if (this.$toast) {
+          this.$toast.error('Error al cargar los productos');
+        }
       } finally {
         this.loadingProducts = false;
       }
-    },
-    
-    openProductsModal() {
-      this.showProductsModal = true;
-    },
-    
-    closeProductsModal() {
-      this.showProductsModal = false;
     },
     
     openProductModal(product = null) {
@@ -208,7 +214,7 @@ export default {
           descripcion: '',
           categoria: '',
           imagen: '',
-          compania_id: this.companyId,
+          compania_id: this.currentUserCompanyId,
           marca_id: null
         };
       }
@@ -222,12 +228,15 @@ export default {
     async saveProduct() {
       try {
         // Asegurar que el producto esté asociado a la compañía correcta
-        this.currentProduct.compania_id = this.companyId;
+        this.currentProduct.compania_id = this.currentUserCompanyId;
         
         if (this.isEditModeProduct) {
           // Actualizar producto existente
           await axios.put(`http://localhost:5000/api/products/${this.currentProduct._id}`, this.currentProduct);
-          this.$toast.success('Producto actualizado con éxito');
+          
+          if (this.$toast) {
+            this.$toast.success('Producto actualizado con éxito');
+          }
           
           // Actualizar en la lista local
           const index = this.companyProducts.findIndex(p => p._id === this.currentProduct._id);
@@ -237,7 +246,10 @@ export default {
         } else {
           // Crear nuevo producto
           const response = await axios.post('http://localhost:5000/api/products', this.currentProduct);
-          this.$toast.success('Producto creado con éxito');
+          
+          if (this.$toast) {
+            this.$toast.success('Producto creado con éxito');
+          }
           
           // Añadir a la lista local
           this.companyProducts.push(response.data);
@@ -247,7 +259,13 @@ export default {
         this.closeProductModal();
       } catch (error) {
         console.error('Error al guardar producto:', error);
-        this.$toast.error(error.response?.data?.message || 'Error al guardar el producto');
+        
+        const errorMessage = error.response?.data?.message || 'Error al guardar el producto';
+        if (this.$toast) {
+          this.$toast.error(errorMessage);
+        } else {
+          console.error(errorMessage);
+        }
       }
     },
     
@@ -258,14 +276,17 @@ export default {
     },
     
     // Métodos para marcas
-    async fetchBrands() {
+    async fetchCompanyBrands() {
       this.loadingBrands = true;
       try {
-        const response = await axios.get(`http://localhost:5000/api/brands?compania=${this.companyId}`);
+        const response = await axios.get(`http://localhost:5000/api/brands?compania=${this.currentUserCompanyId}`);
         this.companyBrands = response.data;
       } catch (error) {
         console.error('Error al cargar marcas:', error);
-        this.$toast.error('Error al cargar las marcas');
+        
+        if (this.$toast) {
+          this.$toast.error('Error al cargar las marcas');
+        }
       } finally {
         this.loadingBrands = false;
       }
@@ -281,7 +302,7 @@ export default {
         this.isEditModeBrand = false;
         this.currentBrand = {
           nombre: '',
-          compania: this.companyId
+          compania: this.currentUserCompanyId
         };
       }
       this.showBrandModal = true;
@@ -294,12 +315,15 @@ export default {
     async saveBrand() {
       try {
         // Asegurar que la marca esté asociada a la compañía correcta
-        this.currentBrand.compania = this.companyId;
+        this.currentBrand.compania = this.currentUserCompanyId;
         
         if (this.isEditModeBrand) {
           // Actualizar marca existente
           await axios.put(`http://localhost:5000/api/brands/${this.currentBrand._id}`, this.currentBrand);
-          this.$toast.success('Marca actualizada con éxito');
+          
+          if (this.$toast) {
+            this.$toast.success('Marca actualizada con éxito');
+          }
           
           // Actualizar en la lista local
           const index = this.companyBrands.findIndex(b => b._id === this.currentBrand._id);
@@ -309,7 +333,10 @@ export default {
         } else {
           // Crear nueva marca
           const response = await axios.post('http://localhost:5000/api/brands', this.currentBrand);
-          this.$toast.success('Marca creada con éxito');
+          
+          if (this.$toast) {
+            this.$toast.success('Marca creada con éxito');
+          }
           
           // Añadir a la lista local
           this.companyBrands.push(response.data);
@@ -319,7 +346,13 @@ export default {
         this.closeBrandModal();
       } catch (error) {
         console.error('Error al guardar marca:', error);
-        this.$toast.error(error.response?.data?.message || 'Error al guardar la marca');
+        
+        const errorMessage = error.response?.data?.message || 'Error al guardar la marca';
+        if (this.$toast) {
+          this.$toast.error(errorMessage);
+        } else {
+          console.error(errorMessage);
+        }
       }
     },
     
@@ -329,20 +362,25 @@ export default {
       this.showDeleteModal = true;
     },
     
-    // Método para ejecutar eliminaciones
     async executeDelete() {
       try {
         if (this.deleteType === 'product') {
           // Eliminar producto
           await axios.delete(`http://localhost:5000/api/products/${this.itemToDelete._id}`);
-          this.$toast.success('Producto eliminado con éxito');
+          
+          if (this.$toast) {
+            this.$toast.success('Producto eliminado con éxito');
+          }
           
           // Eliminar de la lista local de productos
           this.companyProducts = this.companyProducts.filter(p => p._id !== this.itemToDelete._id);
         } else if (this.deleteType === 'brand') {
           // Eliminar marca
           await axios.delete(`http://localhost:5000/api/brands/${this.itemToDelete._id}`);
-          this.$toast.success('Marca eliminada con éxito');
+          
+          if (this.$toast) {
+            this.$toast.success('Marca eliminada con éxito');
+          }
           
           // Eliminar de la lista local de marcas
           this.companyBrands = this.companyBrands.filter(b => b._id !== this.itemToDelete._id);
@@ -356,7 +394,12 @@ export default {
         if (this.deleteType === 'product') itemType = 'el producto';
         else if (this.deleteType === 'brand') itemType = 'la marca';
         
-        this.$toast.error(error.response?.data?.message || `Error al eliminar ${itemType}`);
+        const errorMessage = error.response?.data?.message || `Error al eliminar ${itemType}`;
+        if (this.$toast) {
+          this.$toast.error(errorMessage);
+        } else {
+          console.error(errorMessage);
+        }
       }
     }
   }
@@ -367,236 +410,207 @@ export default {
   <div>
     <AppNavbar />
     
-    <div class="commerce-management">
+    <div class="commerce-management" v-if="hasCompanyAccess && !loading">
       <!-- Encabezado de página -->
       <div class="page-header">
-        <h1>Gestión de Mi Comercio</h1>
+        <div class="company-info">
+          <div class="company-logo" v-if="company && company.imagenPerfil">
+            <img :src="company.imagenPerfil" :alt="company.nombre" />
+          </div>
+          <div class="company-details">
+            <h1>{{ company ? company.nombre : 'Compañía' }}</h1>
+            <p class="company-email">{{ company ? company.email : '' }}</p>
+            <span class="company-plan">Plan {{ company ? company.plan : 'No disponible' }}</span>
+          </div>
+        </div>
+        <button class="btn-primary" @click="openCompanyModal()" v-if="company">
+          <i class="fas fa-edit"></i> Editar Información
+        </button>
       </div>
       
-      <!-- Información del comercio -->
-      <div v-if="!loading && commerce" class="commerce-info">
-        <div class="commerce-header">
-          <div class="commerce-banner" :style="{ backgroundImage: `url('${commerce.imagenBanner || 'https://via.placeholder.com/1200x300'}')` }">
-            <div class="commerce-profile-container">
-              <img 
-                :src="commerce.imagenPerfil || 'https://via.placeholder.com/150'" 
-                alt="Logo del comercio" 
-                class="commerce-profile"
-              >
-            </div>
-          </div>
-          
-          <div class="commerce-details">
-            <div class="commerce-name-section">
-              <h2>{{ commerce.nombre }}</h2>
-              <button v-if="hasPermission" class="btn-primary" @click="openCommerceModal()">
-                <i class="fas fa-edit"></i> Editar Información
-              </button>
-            </div>
-            
-            <div class="commerce-info-grid">
-              <div class="info-item">
-                <div class="info-label">Email</div>
-                <div class="info-value">{{ commerce.email }}</div>
-              </div>
-              
-              <div class="info-item">
-                <div class="info-label">Plan</div>
-                <div class="info-value">{{ commerce.plan }}</div>
-              </div>
-              
-              <div class="info-item">
-                <div class="info-label">Fecha de registro</div>
-                <div class="info-value">{{ formatDate(commerce.createdAt) }}</div>
-              </div>
-            </div>
-          </div>
+      <!-- Sección de estadísticas -->
+      <div class="stats-section">
+        <div class="stat-card">
+          <div class="stat-value">{{ companyProducts.length }}</div>
+          <div class="stat-label">Productos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ companyBrands.length }}</div>
+          <div class="stat-label">Marcas</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ companyProducts.reduce((sum, product) => sum + (product.stock || 0), 0) }}</div>
+          <div class="stat-label">Stock Total</div>
         </div>
       </div>
       
-      <div v-else-if="loading" class="loading-message">
-        <i class="fas fa-spinner fa-spin"></i> Cargando información del comercio...
-      </div>
-      
-      <div v-else class="empty-message">
-        No se encontró información del comercio.
-      </div>
-      
-      <!-- Sección de gestión de productos -->
-      <div class="section-header">
-        <h2>Gestión de Productos</h2>
-        <div class="section-actions">
-          <button v-if="hasPermission" class="btn-primary" @click="openProductModal()">
+      <!-- Panel de Productos -->
+      <div class="section-container">
+        <div class="section-header">
+          <h2>Gestión de Productos</h2>
+          <button class="btn-primary" @click="openProductModal()">
             <i class="fas fa-plus"></i> Nuevo Producto
           </button>
-          <button v-if="hasPermission" class="btn-secondary" @click="openBrandModal()" style="margin-left: 10px;">
-            <i class="fas fa-tag"></i> Nueva Marca
+        </div>
+        
+        <div class="table-container">
+          <table class="data-table" v-if="!loadingProducts && companyProducts.length">
+            <thead>
+              <tr>
+                <th class="product-img-cell">Imagen</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Categoría</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="product in companyProducts" :key="product._id">
+                <td class="product-img-cell">
+                  <img 
+                    :src="product.imagen || 'https://via.placeholder.com/50'" 
+                    alt="Producto" 
+                    class="product-thumbnail"
+                  >
+                </td>
+                <td>{{ product.nombre }}</td>
+                <td>{{ formatPrice(product.precio) }} €</td>
+                <td>{{ product.stock }}</td>
+                <td>{{ product.categoria }}</td>
+                <td class="actions-column">
+                  <button class="btn-action edit" @click="openProductModal(product)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn-action delete" @click="confirmDeleteProduct(product)">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div v-else-if="loadingProducts" class="loading-message">
+            <i class="fas fa-spinner fa-spin"></i> Cargando productos...
+          </div>
+          
+          <div v-else class="empty-message">
+            <p>No hay productos registrados.</p>
+            <button class="btn-secondary" @click="openProductModal()">Agregar primer producto</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Panel de Marcas -->
+      <div class="section-container">
+        <div class="section-header">
+          <h2>Gestión de Marcas</h2>
+          <button class="btn-primary" @click="openBrandModal()">
+            <i class="fas fa-plus"></i> Nueva Marca
           </button>
         </div>
-      </div>
-      
-      <!-- Tabla de productos -->
-      <div class="table-container">
-        <table class="data-table" v-if="!loadingProducts && companyProducts.length">
-          <thead>
-            <tr>
-              <th class="product-img-cell">Imagen</th>
-              <th>Nombre</th>
-              <th>Precio</th>
-              <th>Stock</th>
-              <th>Categoría</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="product in companyProducts" :key="product._id">
-              <td class="product-img-cell">
-                <img 
-                  :src="product.imagen || 'https://via.placeholder.com/50'" 
-                  alt="Producto" 
-                  class="product-thumbnail"
-                >
-              </td>
-              <td>{{ product.nombre }}</td>
-              <td>{{ formatPrice(product.precio) }} €</td>
-              <td>{{ product.stock }}</td>
-              <td>{{ product.categoria }}</td>
-              <td class="actions-column">
-                <button 
-                  v-if="hasPermission" 
-                  class="btn-action edit" 
-                  @click="openProductModal(product)"
-                >
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button 
-                  v-if="hasPermission" 
-                  class="btn-action delete" 
-                  @click="confirmDeleteProduct(product)"
-                >
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
         
-        <div v-else-if="loadingProducts" class="loading-message">
-          <i class="fas fa-spinner fa-spin"></i> Cargando productos...
-        </div>
-        
-        <div v-else class="empty-message">
-          No hay productos registrados en este comercio.
-        </div>
-      </div>
-      
-      <!-- Sección de marcas -->
-      <div class="section-header">
-        <h2>Gestión de Marcas</h2>
-      </div>
-      
-      <!-- Tabla de marcas -->
-      <div class="table-container">
-        <table class="data-table" v-if="!loadingBrands && companyBrands.length">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="brand in companyBrands" :key="brand._id">
-              <td>{{ brand.nombre }}</td>
-              <td class="actions-column">
-                <button 
-                  v-if="hasPermission" 
-                  class="btn-action edit" 
-                  @click="openBrandModal(brand)"
-                >
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button 
-                  v-if="hasPermission" 
-                  class="btn-action delete" 
-                  @click="confirmDeleteBrand(brand)"
-                >
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <div v-else-if="loadingBrands" class="loading-message">
-          <i class="fas fa-spinner fa-spin"></i> Cargando marcas...
-        </div>
-        
-        <div v-else class="empty-message">
-          No hay marcas registradas en este comercio.
+        <div class="table-container">
+          <table class="data-table" v-if="!loadingBrands && companyBrands.length">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Productos</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="brand in companyBrands" :key="brand._id">
+                <td>{{ brand.nombre }}</td>
+                <td>{{ companyProducts.filter(p => p.marca_id === brand._id).length }}</td>
+                <td class="actions-column">
+                  <button class="btn-action edit" @click="openBrandModal(brand)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn-action delete" @click="confirmDeleteBrand(brand)">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div v-else-if="loadingBrands" class="loading-message">
+            <i class="fas fa-spinner fa-spin"></i> Cargando marcas...
+          </div>
+          
+          <div v-else class="empty-message">
+            <p>No hay marcas registradas.</p>
+            <button class="btn-secondary" @click="openBrandModal()">Agregar primera marca</button>
+          </div>
         </div>
       </div>
     </div>
     
-    <!-- Modal de Comercio -->
-    <div class="modal" v-if="showCommerceModal" @click.self="closeCommerceModal">
+    <div v-else-if="loading" class="loading-container">
+      <i class="fas fa-spinner fa-spin"></i> Cargando información de la compañía...
+    </div>
+    
+    <div v-else class="access-denied">
+      <h2>Acceso Denegado</h2>
+      <p>Solo los gerentes tienen acceso a esta página.</p>
+    </div>
+    
+    <!-- Modal de Compañía -->
+    <div class="modal" v-if="showCompanyModal" @click.self="closeCompanyModal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>Editar Información del Comercio</h2>
-          <button class="close-button" @click="closeCommerceModal">×</button>
+          <h2>Editar Información de Compañía</h2>
+          <button class="close-button" @click="closeCompanyModal">×</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label for="commerce-name">Nombre del comercio</label>
+            <label for="company-name">Nombre de la compañía</label>
             <input 
               type="text" 
-              id="commerce-name" 
-              v-model="currentCommerce.nombre" 
-              placeholder="Nombre del comercio"
+              id="company-name" 
+              v-model="currentCompany.nombre" 
+              placeholder="Nombre de la compañía"
             >
           </div>
           
           <div class="form-group">
-            <label for="commerce-email">Email de contacto</label>
+            <label for="company-email">Email de contacto</label>
             <input 
               type="email" 
-              id="commerce-email" 
-              v-model="currentCommerce.email" 
+              id="company-email" 
+              v-model="currentCompany.email" 
               placeholder="email@ejemplo.com"
             >
           </div>
           
           <div class="form-group">
-            <label for="commerce-plan">Plan</label>
-            <select id="commerce-plan" v-model="currentCommerce.plan">
-              <option v-for="option in planOptions" :key="option" :value="option">
-                {{ option }}
-              </option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label for="commerce-banner">URL de imagen de banner</label>
+            <label for="company-banner">URL de imagen de banner</label>
             <input 
               type="text" 
-              id="commerce-banner" 
-              v-model="currentCommerce.imagenBanner" 
+              id="company-banner" 
+              v-model="currentCompany.imagenBanner" 
               placeholder="https://ejemplo.com/imagen.jpg"
             >
           </div>
           
           <div class="form-group">
-            <label for="commerce-profile">URL de imagen de perfil</label>
+            <label for="company-profile">URL de imagen de perfil</label>
             <input 
               type="text" 
-              id="commerce-profile" 
-              v-model="currentCommerce.imagenPerfil" 
+              id="company-profile" 
+              v-model="currentCompany.imagenPerfil" 
               placeholder="https://ejemplo.com/imagen.jpg"
             >
+          </div>
+          
+          <div class="form-group">
+            <p class="note">El plan de la compañía ({{ currentCompany.plan }}) solo puede ser modificado por un administrador.</p>
           </div>
           
           <div class="modal-footer">
-            <button class="btn-secondary" @click="closeCommerceModal">Cancelar</button>
-            <button class="btn-primary" @click="saveCommerce">Actualizar</button>
+            <button class="btn-secondary" @click="closeCompanyModal">Cancelar</button>
+            <button class="btn-primary" @click="saveCompany">Guardar Cambios</button>
           </div>
         </div>
       </div>
@@ -739,10 +753,13 @@ export default {
             ¿Está seguro de que desea eliminar 
             <strong>
               {{ 
-                deleteType === 'product' ? itemToDelete.nombre :
-                deleteType === 'brand' ? itemToDelete.nombre : ''
+                deleteType === 'product' ? (itemToDelete ? itemToDelete.nombre : '') :
+                deleteType === 'brand' ? (itemToDelete ? itemToDelete.nombre : '') : ''
               }}
             </strong>?
+          </p>
+          <p class="warning-text" v-if="deleteType === 'brand'">
+            Esta acción podría afectar a los productos asociados a esta marca.
           </p>
           
           <div class="modal-footer">
