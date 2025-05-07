@@ -129,6 +129,24 @@ import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import ProductSection from '@/components/product/ProductSection.vue'
 import CartService from '@/services/CartService'
+import axios from 'axios';
+
+// Configuración base para axios (debe ser igual que en ComercioDetail)
+const apiClient = axios.create({
+  baseURL: process.env.VUE_APP_API_URL || 'http://localhost:5000/api',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Agregar interceptor para incluir el token de autenticación si está disponible
+apiClient.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export default {
   name: 'ProductDetail',
@@ -149,131 +167,101 @@ export default {
   },
   methods: {
     loadProduct() {
-      this.loading = true
-      
-      // Simulamos obtener el producto por ID desde la API
-      // En una aplicación real, esto se haría con una llamada a la API
-      setTimeout(() => {
-        // Obtener el ID del producto de los parámetros de la ruta
-        const productId = parseInt(this.$route.params.id)
-        
-        // Obtener datos de ejemplo (en producción, esto vendría de tu API)
-        const allProducts = [
-          { 
-            id: 1, 
-            name: 'Zapatos Deportivos', 
-            price: 89.99, 
-            category: 'footwear', 
-            stock: 10, 
-            rating: 4.5,
-            isTrending: true,
-            isNew: true,
-            isBestSeller: true,
-            description: 'Zapatos deportivos de alta calidad',
-            image: require('@/assets/img/clothes/zapatilla.jpg')
-          },
-          { 
-            id: 2, 
-            name: 'Camiseta Básica', 
-            price: 29.99, 
-            category: 'clothing', 
-            stock: 25, 
-            rating: 4.2,
-            isTrending: true,
-            isNew: false,
-            isBestSeller: true,
-            description: 'Camiseta 100% algodón',
-            image: require('@/assets/img/clothes/CamisaBlanca.jpg')
-          },
-          { 
-            id: 3, 
-            name: 'Gorra Ajustable', 
-            price: 24.99, 
-            category: 'accessories', 
-            stock: 15, 
-            rating: 3.8,
-            isTrending: false,
-            isNew: true,
-            isBestSeller: false,
-            description: 'Gorra con ajuste personalizado',
-            image: require('@/assets/img/clothes/gorra.jpg')
-          },
-          { 
-            id: 4, 
-            name: 'Pantalón Casual', 
-            price: 49.99, 
-            category: 'clothing', 
-            stock: 0, 
-            rating: 4.0,
-            isTrending: true,
-            isNew: false,
-            isBestSeller: true,
-            description: 'Pantalón cómodo para uso diario',
-            image: require('@/assets/img/clothes/pantalon.jpg')
-          },{ 
-            id: 5, 
-            name: 'Mochila vanguardista', 
-            price: 99.99, 
-            category: 'clothing', 
-            stock: 0, 
-            rating: 4.0,
-            isTrending: true,
-            isNew: false,
-            isBestSeller: true,
-            description: 'Mochila vanguardista para uso diario',
-            image: require('@/assets/img/clothes/bolso.jpg')
-          },{ 
-            id: 6, 
-            name: 'Bolso de mano', 
-            price: 19.99, 
-            category: 'clothing', 
-            stock: 0, 
-            rating: 4.0,
-            isTrending: true,
-            isNew: false,
-            isBestSeller: false,
-            description: 'Bolso de mano elegante para uso diario',
-            image: require('@/assets/img/clothes/bolso_mano_mujer.jpg')
-          },{ 
-            id: 7, 
-            name: 'Bolso de mano', 
-            price: 40.99, 
-            category: 'clothing', 
-            stock: 0, 
-            rating: 2.0,
-            isTrending: true,
-            isNew: false,
-            isBestSeller: false,
-            description: 'Bolso de mano elegante para uso diario',
-            image: require('@/assets/img/clothes/bikini_mujer.jpg')
-          },{ 
-            id: 8, 
-            name: 'Zapatos de charol', 
-            price: 40.99, 
-            category: 'clothing', 
-            stock: 0, 
-            rating: 2.0,
-            isTrending: true,
-            isNew: false,
-            isBestSeller: false,
-            description: 'Zapatos de charol elegantes para ocasiones especiales',
-            image: require('@/assets/img/clothes/zapatos_charol.jpg')
-          }
-        ]
-        
-        // Buscar el producto por ID
-        this.product = allProducts.find(p => p.id === productId)
-        
-        // Buscar productos relacionados (misma categoría)
-        if (this.product) {
-          this.relatedProducts = allProducts
-            .filter(p => p.id !== this.product.id && p.category === this.product.category)
-            .slice(0, 4)
-        }
-        
-        this.loading = false
-      }, 800)
-    },
+  this.loading = true;
+  
+  // Obtener el ID del producto de los parámetros de la ruta
+  const productIdParam = this.$route.params.id;
+  
+  // Verificar si venimos de comercio detail (podría ser un ID de MongoDB)
+  const isFromComercio = this.$route.query.source === 'comercio';
+  
+  // Si venimos de comercio detail, cargar el producto desde la API
+  if (isFromComercio) {
+    apiClient.get(`/products/${productIdParam}`)
+      .then(response => {
+        this.product = this.mapApiProductToLocal(response.data);
+        this.loadRelatedProductsFromApi();
+      })
+      .catch(error => {
+        console.error("Error al cargar el producto:", error);
+        // Como fallback, intentar cargar el producto local
+        this.loadProductFromLocalData(productIdParam);
+      });
+  } else {
+    // Cargar desde datos locales (simulación)
+    this.loadProductFromLocalData(productIdParam);
+  }
+},
+
+// Método para cargar productos desde datos locales (como tenías antes)
+loadProductFromLocalData(productIdParam) {
+  setTimeout(() => {
+    const productId = parseInt(productIdParam);
+    
+    // Obtener datos de ejemplo
+    const allProducts = [
+      // ... tus productos de ejemplo ...
+    ];
+    
+    // Buscar el producto por ID
+    this.product = allProducts.find(p => p.id === productId);
+    
+    // Buscar productos relacionados (misma categoría)
+    if (this.product) {
+      this.relatedProducts = allProducts
+        .filter(p => p.id !== this.product.id && p.category === this.product.category)
+        .slice(0, 4);
+    }
+    
+    this.loading = false;
+  }, 800);
+},
+
+// Método para cargar productos relacionados desde la API
+loadRelatedProductsFromApi() {
+  if (!this.product || !this.product.category) {
+    this.relatedProducts = [];
+    this.loading = false;
+    return;
+  }
+  
+  apiClient.get('/products', {
+    params: { 
+      category: this.product.category,
+      exclude: this.product._id
+    }
+  })
+  .then(response => {
+    // Mapear los productos de la API al formato local
+    this.relatedProducts = response.data
+      .map(this.mapApiProductToLocal)
+      .slice(0, 4);
+  })
+  .catch(error => {
+    console.error("Error al cargar productos relacionados:", error);
+    this.relatedProducts = [];
+  })
+  .finally(() => {
+    this.loading = false;
+  });
+},
+
+// Método para mapear un producto de la API al formato local
+mapApiProductToLocal(apiProduct) {
+  return {
+    id: apiProduct._id, // Usar el ID de MongoDB como ID local
+    name: apiProduct.nombre,
+    price: apiProduct.precio,
+    category: apiProduct.categoria,
+    stock: apiProduct.stock || 0,
+    rating: apiProduct.calificacion || 4.0,
+    isTrending: apiProduct.destacado || false,
+    isNew: apiProduct.nuevo || false,
+    isBestSeller: apiProduct.masVendido || false,
+    description: apiProduct.descripcion || '',
+    image: apiProduct.imagen 
+  };
+},
     formatPrice(price) {
       return new Intl.NumberFormat('es-ES', { 
         style: 'currency', 
