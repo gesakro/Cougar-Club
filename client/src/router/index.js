@@ -88,7 +88,18 @@ const routes = [
     component: () => import('@/views/Admin/companyManagement.vue'),
     meta: {
       title: 'Gestionar Comercio | Cougar Club',
-      requiresAdmin: true // Solo usuarios Administrador podrán verla
+      // Permitimos que tanto Administradores 
+      allowedRoles: ['Administrador']
+    }
+  },
+  {
+    path: '/gestionar-ecomercio',
+    name: 'GestionareComercio',
+    component: () => import('@/views/Gerente/comerceManagament.vue'),
+    meta: {
+      title: 'Gestionar Comercio | Cougar Club',
+      // Permitimos que tanto Administradores como Gerentes puedan acceder
+      allowedRoles: ['Administrador', 'Gerente']
     }
   },
   {
@@ -109,7 +120,6 @@ const routes = [
       title: 'Página no encontrada | Cougar Club'
     }
   },
-
   {
     path: '/imagen',
     name: 'ImagenSet',
@@ -127,11 +137,11 @@ const router = createRouter({
     if (savedPosition) {
       return savedPosition
     }
-    
+
     if (to.meta.requiresScrollTop) {
       return { top: 0, behavior: 'smooth' }
     }
-    
+
     if (to.hash) {
       return {
         el: to.hash,
@@ -139,16 +149,24 @@ const router = createRouter({
         top: 100
       }
     }
-    
+
     return { left: 0, top: 0 }
   }
 })
 
+// Guardias de navegación globales
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title || 'Cougar Club'
+  const userRole = localStorage.getItem('userRole')
 
-  if (to.meta.requiresAdmin) {
-    const userRole = localStorage.getItem('userRole')
+  // Validar rutas con propiedad allowedRoles
+  if (to.meta.allowedRoles) {
+    if (!to.meta.allowedRoles.includes(userRole)) {
+      return next({ name: 'Home' })
+    }
+  }
+  // Validar rutas que requieren exclusivamente Administrador
+  else if (to.meta.requiresAdmin) {
     if (userRole !== 'Administrador') {
       return next({ name: 'Home' })
     }
