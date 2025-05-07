@@ -173,6 +173,15 @@ export default {
 
     <!-- Sección derecha -->
     <div class="right-section">
+      <!-- Botón de tiendas (nuevo) -->
+      <button class="icon-button" aria-label="Tiendas">
+        <router-link to="/comercios" class="store-link">
+          <div class="store-icon">
+            <i class="fas fa-store"></i>
+          </div>
+        </router-link>
+      </button>
+
       <!-- Botón de usuario con menú desplegable -->
       <div class="dropdown-container">
         <button class="icon-button" @click="toggleUserMenu" aria-label="User profile">
@@ -255,7 +264,6 @@ export default {
   </nav>
 </template>
 
-<!-- El estilo se mantiene igual -->
 <style scoped>
 /* === ESTRUCTURA PRINCIPAL === */
 .navbar {
@@ -355,7 +363,7 @@ export default {
   transform: scale(1.05);
 }
 
-.user-icon {
+.user-icon, .store-icon {
   width: 2rem;
   height: 2rem;
   display: flex;
@@ -365,10 +373,11 @@ export default {
   font-size: 1.8rem;
 }
 
-.cart-link {
+.cart-link, .store-link {
   text-decoration: none;
   font-size: 1.2rem;
   display: flex;
+  color: white;
 }
 
 .cart-counter {
@@ -576,7 +585,7 @@ button.dropdown-item {
     max-width: 30%;
   }
 
-  .user-icon {
+  .user-icon, .store-icon {
     width: 24px;
     height: 24px;
     font-size: 1.5rem;

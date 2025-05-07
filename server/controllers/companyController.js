@@ -1,9 +1,23 @@
 const Company = require('../models/Company');
+const Brand = require('../models/Brand');
+const Product = require('../models/Product');
 
 // Crear una nueva compañía
 exports.createCompany = async (req, res) => {
   try {
-    const company = new Company(req.body);
+    // Desestructuramos los campos del req.body
+    const { nombre, email, plan, imagenBanner, imagenPerfil, productos } = req.body;
+
+    // Creamos el objeto de la compañía con valores por defecto si es necesario
+    const company = new Company({
+      nombre,
+      email,
+      plan: plan || 'Mensual',            // Valor por defecto: 'Mensual'
+      imagenBanner: imagenBanner || '',     // URL del banner
+      imagenPerfil: imagenPerfil || '',     // URL de la imagen de perfil
+      productos: productos || []            // Array de productos (puede estar vacío)
+    });
+
     const savedCompany = await company.save();
     res.status(201).json(savedCompany);
   } catch (error) {
@@ -28,6 +42,32 @@ exports.getCompanyById = async (req, res) => {
     if (!company)
       return res.status(404).json({ message: 'Compañía no encontrada' });
     res.json(company);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Obtener compañía con sus marcas y productos asociados
+exports.getCompanyDetail = async (req, res) => {
+  try {
+    const companyId = req.params.id;
+    // Se consulta la compañía
+    const company = await Company.findById(companyId);
+    if (!company)
+      return res.status(404).json({ message: 'Compañía no encontrada' });
+
+    // Se obtienen las marcas asociadas a la compañía
+    const brands = await Brand.find({ compania: companyId });
+
+    // Para cada marca, se buscan los productos que pertenecen a ella
+    const brandsWithProducts = await Promise.all(
+      brands.map(async brand => {
+        const products = await Product.find({ marca_id: brand._id });
+        return { brand, products };
+      })
+    );
+
+    res.json({ company, brands: brandsWithProducts });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

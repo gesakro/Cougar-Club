@@ -24,5 +24,6 @@ router.put('/:id', verifyToken, authorizeRole('Administrador', 'Gerente'), async
 
 // Eliminar compañía: solo Administrador
 router.delete('/:id', verifyToken, authorizeRole('Administrador'), companyController.deleteCompany);
+router.get('/:id/detail', companyController.getCompanyDetail);
 
 module.exports = router;

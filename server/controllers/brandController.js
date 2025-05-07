@@ -11,10 +11,18 @@ exports.createBrand = async (req, res) => {
   }
 };
 
-// Obtener todas las marcas
+// Obtener todas las marcas con filtro por compañía
 exports.getBrands = async (req, res) => {
   try {
-    const brands = await Brand.find().populate('compania');
+    const { compania } = req.query;
+    
+    // Filtrar por compañía si se proporciona el parámetro
+    const filter = {};
+    if (compania) {
+      filter.compania = compania;
+    }
+    
+    const brands = await Brand.find(filter).populate('compania');
     res.json(brands);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -55,6 +63,17 @@ exports.deleteBrand = async (req, res) => {
     if (!deletedBrand)
       return res.status(404).json({ message: 'Marca no encontrada' });
     res.json({ message: 'Marca eliminada exitosamente' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Obtener marcas por compañía
+exports.getBrandsByCompany = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+    const brands = await Brand.find({ compania: companyId });
+    res.json(brands);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

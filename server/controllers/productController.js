@@ -20,13 +20,21 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-// Obtener todos los productos (con paginación opcional)
+// Obtener todos los productos (con filtrado por compañía)
 exports.getProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const products = await Product.find()
+    const { page = 1, limit = 10, compania_id } = req.query;
+    
+    // Construir filtro basado en los parámetros de consulta
+    const filter = {};
+    if (compania_id) {
+      filter.compania_id = compania_id;
+    }
+    
+    const products = await Product.find(filter)
       .skip((page - 1) * limit)
       .limit(Number(limit));
+      
     res.json(products);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -68,6 +76,18 @@ exports.deleteProduct = async (req, res) => {
     if (!deletedProduct)
       return res.status(404).json({ error: 'Producto no encontrado' });
     res.json({ message: 'Producto eliminado' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Obtener productos por marca
+exports.getProductsByBrand = async (req, res) => {
+  try {
+    const { marca_id } = req.params;
+    
+    const products = await Product.find({ marca_id });
+    res.json(products);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
