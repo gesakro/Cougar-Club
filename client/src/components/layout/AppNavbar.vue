@@ -147,6 +147,155 @@ export default {
 };
 </script>
 
+<script>
+import AppMenu from "./AppMenu.vue";
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
+import CartService from '@/services/CartService'; // Importar CartService
+
+export default {
+  name: "NavBar",
+  components: { AppMenu },
+  setup() {
+    const router = useRouter();
+    
+    // Variables reactivas
+    const searchQuery = ref("");
+    const searchActive = ref(false);
+    const cartItems = ref(0); // Inicializado a 0
+    const mobileExpanded = ref(false);
+    const userMenuOpen = ref(false);
+    const userName = ref("");
+    const userEmail = ref("");
+    const userRole = ref("");
+    const searchInput = ref(null);
+    const userMenu = ref(null);
+    
+    // Computed property
+    const isLoggedIn = computed(() => {
+      return !!localStorage.getItem('token');
+    });
+    
+    // Computed properties para los roles
+    const isAdmin = computed(() => {
+      return userRole.value === 'Administrador';
+    });
+    
+    const isGerente = computed(() => {
+      return userRole.value === 'Gerente';
+    });
+    
+    // Métodos
+    const toggleUserMenu = () => {
+      userMenuOpen.value = !userMenuOpen.value;
+    };
+    
+    const activateSearch = () => {
+      searchActive.value = true;
+      if (window.innerWidth <= 768) {
+        mobileExpanded.value = true;
+      }
+    };
+    
+    const deactivateSearch = () => {
+      searchActive.value = false;
+      mobileExpanded.value = false;
+    };
+    
+    const logout = () => {
+      // Eliminar token y datos de usuario del localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userCompany');
+      
+      // Actualizar variables reactivas
+      userName.value = "";
+      userEmail.value = "";
+      userRole.value = "";
+      
+      // Cerrar el menú desplegable
+      userMenuOpen.value = false;
+      
+      // Redirigir a la página de inicio
+      router.push('/');
+    };
+    
+    const handleClickOutside = (event) => {
+      if (userMenu.value && !userMenu.value.contains(event.target) && 
+          !event.target.closest('.icon-button')) {
+        userMenuOpen.value = false;
+      }
+    };
+    
+    const getUserInfo = () => {
+      if (isLoggedIn.value) {
+        userName.value = localStorage.getItem('userName') || 'Usuario';
+        userEmail.value = localStorage.getItem('userEmail') || '';
+        userRole.value = localStorage.getItem('userRole') || 'Usuario';
+        
+        // Verificar y mostrar el rol en la consola para depuración
+        console.log('Rol de usuario cargado:', userRole.value);
+      }
+    };
+    
+    // Método para actualizar el contador del carrito
+    const updateCartCounter = () => {
+      cartItems.value = CartService.getCartItemCount();
+    };
+    
+    // Lifecycle hooks
+    onMounted(() => {
+      document.addEventListener('click', handleClickOutside);
+      getUserInfo();
+      
+      // Escuchar cambios en localStorage para actualizar datos de usuario en tiempo real
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'token' || event.key === 'userName' || 
+            event.key === 'userEmail' || event.key === 'userRole') {
+          getUserInfo();
+        }
+      });
+      
+      // Escuchar el evento cart-updated para actualizar el contador del carrito
+      window.addEventListener('cart-updated', updateCartCounter);
+      
+      // Inicializar el contador del carrito
+      updateCartCounter();
+    });
+    
+    onBeforeUnmount(() => {
+      document.removeEventListener('click', handleClickOutside);
+      window.removeEventListener('storage', getUserInfo);
+      window.removeEventListener('cart-updated', updateCartCounter);
+    });
+    
+    return {
+      searchQuery,
+      searchActive,
+      cartItems,
+      mobileExpanded,
+      userMenuOpen,
+      userName,
+      userEmail,
+      userRole,
+      isLoggedIn,
+      isAdmin,
+      isGerente,
+      searchInput,
+      userMenu,
+      toggleUserMenu,
+      activateSearch,
+      deactivateSearch,
+      logout,
+      handleClickOutside,
+      getUserInfo
+    };
+  }
+};
+</script>
+
 <template>
   <nav class="navbar">
     <!-- Sección izquierda -->
@@ -266,6 +415,7 @@ export default {
 
 <style scoped>
 /* === ESTRUCTURA PRINCIPAL === */
+/* === ESTRUCTURA PRINCIPAL === */
 .navbar {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -278,14 +428,20 @@ export default {
   min-height: 70px;
   width: 100%;
   box-sizing: border-box;
+  min-height: 70px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
+/* === SECCIÓN IZQUIERDA === */
 /* === SECCIÓN IZQUIERDA === */
 .left-section {
   display: flex;
   align-items: center;
   justify-self: start;
   gap: 15px;
+  flex-shrink: 1;
+  min-width: 0;
   flex-shrink: 1;
   min-width: 0;
 }
@@ -299,6 +455,7 @@ export default {
   transition: all 0.3s ease;
   width: 200px;
   max-width: 100%;
+  max-width: 100%;
 }
 
 .search-input {
@@ -309,6 +466,7 @@ export default {
   outline: none;
   font-size: 1rem;
   text-overflow: ellipsis;
+  text-overflow: ellipsis;
 }
 
 .search-button {
@@ -318,6 +476,7 @@ export default {
   padding: 0;
   margin-left: 5px;
   flex-shrink: 0;
+  flex-shrink: 0;
 }
 
 .search-icon {
@@ -326,7 +485,9 @@ export default {
 }
 
 /* === LOGO CENTRADO === */
+/* === LOGO CENTRADO === */
 .logo {
+  font-size: 2.2rem;
   font-size: 2.2rem;
   font-weight: 700;
   color: white;
@@ -336,14 +497,18 @@ export default {
   transition: opacity 0.3s;
   overflow: hidden;
   text-overflow: ellipsis;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* === SECCIÓN DERECHA === */
 /* === SECCIÓN DERECHA === */
 .right-section {
   display: flex;
   align-items: center;
   justify-self: end;
   gap: 15px;
+  flex-shrink: 0;
   flex-shrink: 0;
 }
 
@@ -355,8 +520,13 @@ export default {
   position: relative;
   transition: transform 0.2s;
   display: flex;
+  display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.icon-button:hover {
+  transform: scale(1.05);
 }
 
 .icon-button:hover {
@@ -366,6 +536,11 @@ export default {
 .user-icon, .store-icon {
   width: 2rem;
   height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -527,6 +702,138 @@ button.dropdown-item {
   }
 }
 
+/* === DROPDOWN MENU === */
+.dropdown-container {
+  position: relative;
+}
+
+.user-status-indicator {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  background-color: #4CAF50;
+  border-radius: 50%;
+  border: 2px solid #250902;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 220px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  padding: 1rem 0;
+  z-index: 900;
+  transition: all 0.3s ease;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 15px;
+  width: 12px;
+  height: 12px;
+  background-color: white;
+  transform: rotate(45deg);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.user-info {
+  padding: 0.5rem 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0;
+  color: #333;
+}
+
+.user-email, 
+.user-role {
+  font-size: 0.85rem;
+  color: #777;
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-role {
+  font-weight: 500;
+  color: #5a5a5a;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: #eee;
+  margin: 0.5rem 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  color: #333;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item i {
+  margin-right: 0.75rem;
+  font-size: 1rem;
+  color: #666;
+  width: 20px;
+  text-align: center;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+  color: #73614C;
+}
+
+.dropdown-item:active {
+  background-color: #f0f0f0;
+}
+
+button.dropdown-item {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.logout-btn {
+  color: #dc3545;
+}
+
+.logout-btn:hover {
+  background-color: #fff5f5;
+  color: #dc3545;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* === MEJORAS PARA BÚSQUEDA EN MÓVIL === */
 @media (max-width: 768px) {
   .navbar {
@@ -536,6 +843,7 @@ button.dropdown-item {
   }
 
   .search-container {
+    width: 40px;
     width: 40px;
     justify-content: center;
     padding: 0.5rem;
@@ -552,6 +860,8 @@ button.dropdown-item {
     position: absolute;
     left: 1rem;
     right: 1rem;
+    top: 15px;
+    width: calc(100% - 2rem);
     top: 15px;
     width: calc(100% - 2rem);
     max-width: 100%;
@@ -572,22 +882,36 @@ button.dropdown-item {
 
   .logo {
     font-size: 1.5rem;
+    font-size: 1.5rem;
     margin-left: 10px;
+    max-width: 120px;
     max-width: 120px;
     text-align: center;
   }
 
   .left-section {
     max-width: 30%;
+    max-width: 30%;
   }
 
   .right-section {
+    max-width: 30%;
     max-width: 30%;
   }
 
   .user-icon, .store-icon {
     width: 24px;
     height: 24px;
+    font-size: 1.5rem;
+  }
+  
+  .dropdown-menu {
+    width: 250px;
+    right: -80px;
+  }
+  
+  .dropdown-menu::before {
+    right: 90px;
     font-size: 1.5rem;
   }
   
@@ -605,6 +929,7 @@ button.dropdown-item {
 @media (max-width: 480px) {
   .navbar {
     padding: 0.8rem 0.5rem;
+    padding: 0.8rem 0.5rem;
   }
   
   .logo {
@@ -614,10 +939,17 @@ button.dropdown-item {
   
   .icon-button {
     padding: 0.3rem;
+    padding: 0.3rem;
   }
   
   .left-section, 
   .right-section {
+    gap: 8px;
+  }
+  
+  .dropdown-menu {
+    width: 200px;
+    right: -70px;
     gap: 8px;
   }
   
