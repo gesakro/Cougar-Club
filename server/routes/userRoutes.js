@@ -9,7 +9,7 @@ const { verifyToken, authorizeRole, checkCompanyOwnership } = require('../middle
 router.post('/', verifyToken, authorizeRole('Administrador'), userController.createUser);
 
 // Solo Administrador y Gerente pueden obtener la lista completa de usuarios
-router.get('/', verifyToken, authorizeRole('Administrador', 'Gerente'), userController.getUsers);
+router.get('/', verifyToken, authorizeRole('Administrador'), userController.getUsers);
 
 // Para obtener un usuario por ID, se requiere autenticación.
 // Aquí podrías agregar condiciones adicionales según la lógica de negocio (por ejemplo,
