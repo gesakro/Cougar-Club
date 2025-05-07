@@ -54,11 +54,7 @@ export default {
         });
       } else {
         this.$router.push({
-          path: '/products',
-          query: {
-            ref: 'hero_cta',
-            sort: 'newest '
-          }
+          path: '/comercios/',
       });
       }
     },

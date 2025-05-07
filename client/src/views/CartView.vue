@@ -18,7 +18,7 @@
           </div>
           <h3>Tu carrito está vacío</h3>
           <p>Parece que aún no has añadido productos a tu carrito</p>
-          <router-link to="/products" class="continue-shopping-btn">
+          <router-link to="/comercios" class="continue-shopping-btn">
             Continuar comprando
           </router-link>
         </div>

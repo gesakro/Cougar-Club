@@ -1,12 +1,13 @@
 <template>
+
   <div class="comercio-detail-container">
     <AppNavbar />
-    
+
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
       <p>Cargando información del comercio...</p>
     </div>
-    
+
     <div v-else-if="error" class="error-container">
       <div class="error-icon">
         <i class="fas fa-exclamation-triangle"></i>
@@ -17,37 +18,29 @@
         <i class="fas fa-sync-alt"></i> Intentar nuevamente
       </button>
     </div>
-    
+
     <div v-else class="comercio-detail-content">
       <!-- Hero Section -->
       <div class="hero-section">
         <div class="banner-container">
-          <img
-            v-if="company.imagenBanner"
-            :src="company.imagenBanner"
-            :alt="`Banner de ${company.nombre}`"
-            class="banner-image"
-          />
+          <img v-if="company.imagenBanner" :src="company.imagenBanner" :alt="`Banner de ${company.nombre}`"
+            class="banner-image" />
           <div v-else class="banner-placeholder">
             <i class="fas fa-image"></i>
           </div>
         </div>
-        
+
         <div class="company-header">
           <div class="profile-container">
             <div class="profile-wrapper">
-              <img
-                v-if="company.imagenPerfil"
-                :src="company.imagenPerfil"
-                :alt="`Perfil de ${company.nombre}`"
-                class="profile-image"
-              />
+              <img v-if="company.imagenPerfil" :src="company.imagenPerfil" :alt="`Perfil de ${company.nombre}`"
+                class="profile-image" />
               <div v-else class="profile-placeholder">
                 <i class="fas fa-store"></i>
               </div>
             </div>
           </div>
-          
+
           <div class="company-info-primary">
             <h1 class="company-name">{{ company.nombre }}</h1>
             <div class="company-details">
@@ -69,7 +62,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="actions-container">
             <a v-if="company.sitioWeb" :href="company.sitioWeb" target="_blank" class="action-btn website-btn">
               <i class="fas fa-globe"></i> Visitar sitio web
@@ -80,7 +73,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Description Section -->
       <section v-if="company.descripcion" class="description-section">
         <div class="section-container">
@@ -88,7 +81,7 @@
           <p class="company-description">{{ company.descripcion }}</p>
         </div>
       </section>
-      
+
       <!-- Stats Section -->
       <section class="stats-section">
         <div class="section-container">
@@ -102,7 +95,7 @@
                 <p class="stat-label">Marcas</p>
               </div>
             </div>
-            
+
             <div class="stat-card">
               <div class="stat-icon">
                 <i class="fas fa-box"></i>
@@ -112,7 +105,7 @@
                 <p class="stat-label">Productos</p>
               </div>
             </div>
-            
+
             <div class="stat-card">
               <div class="stat-icon">
                 <i class="fas fa-calendar-alt"></i>
@@ -122,7 +115,7 @@
                 <p class="stat-label">Desde</p>
               </div>
             </div>
-            
+
             <div class="stat-card">
               <div class="stat-icon">
                 <i class="fas fa-star"></i>
@@ -135,7 +128,7 @@
           </div>
         </div>
       </section>
-      
+
       <!-- Brands Section -->
       <section class="brands-section">
         <div class="section-container">
@@ -143,7 +136,7 @@
             <h2 class="section-title">Nuestras Marcas</h2>
             <p class="section-subtitle">Descubre las marcas disponibles en {{ company.nombre }}</p>
           </div>
-          
+
           <div v-if="brands.length > 0" class="brands-container">
             <div v-for="brand in brands" :key="brand._id" class="brand-card">
               <div class="brand-icon">
@@ -161,14 +154,14 @@
               </div>
             </div>
           </div>
-          
+
           <div v-else class="empty-state">
             <i class="fas fa-tags"></i>
             <p>Actualmente no hay marcas registradas para este comercio</p>
           </div>
         </div>
       </section>
-      
+
       <!-- Products Section -->
       <section class="products-section">
         <div class="section-container">
@@ -176,13 +169,13 @@
             <h2 class="section-title">Nuestros Productos</h2>
             <p class="section-subtitle">Explora nuestra colección de productos destacados</p>
           </div>
-          
+
           <div v-if="products.length > 0" class="filter-container">
             <div class="search-box">
               <i class="fas fa-search"></i>
               <input type="text" v-model="productSearch" placeholder="Buscar productos..." />
             </div>
-            
+
             <div class="filter-options">
               <select v-model="sortOption" class="sort-select">
                 <option value="name-asc">Nombre (A-Z)</option>
@@ -192,16 +185,11 @@
               </select>
             </div>
           </div>
-          
+
           <div v-if="filteredProducts.length > 0" class="products-grid">
             <div v-for="product in filteredProducts" :key="product._id" class="product-card">
               <div class="product-image-container">
-                <img 
-                  v-if="product.imagen" 
-                  :src="product.imagen" 
-                  :alt="product.nombre" 
-                  class="product-image" 
-                />
+                <img v-if="product.imagen" :src="product.imagen" :alt="product.nombre" class="product-image" />
                 <div v-else class="product-image-placeholder">
                   <i class="fas fa-box-open"></i>
                 </div>
@@ -209,42 +197,43 @@
                   <span>-{{ product.descuento }}%</span>
                 </div>
               </div>
-              
+
               <div class="product-content">
                 <h3 class="product-name">{{ product.nombre }}</h3>
-                
+
                 <div v-if="product.marca" class="product-brand">
                   <span>{{ getBrandName(product.marca) }}</span>
                 </div>
-                
+
                 <p v-if="product.descripcion" class="product-description">
                   {{ truncateDescription(product.descripcion) }}
                 </p>
-                
+
                 <div class="product-meta">
                   <div class="product-price">
-                    <span v-if="product.precioAnterior" class="old-price">${{ formatPrice(product.precioAnterior) }}</span>
+                    <span v-if="product.precioAnterior" class="old-price">${{ formatPrice(product.precioAnterior)
+                    }}</span>
                     <span class="current-price">${{ formatPrice(product.precio) }}</span>
                   </div>
-                  
+
                   <div class="product-stock" :class="getStockClass(product.stock)">
                     <i class="fas fa-circle"></i>
                     <span>{{ getStockLabel(product.stock) }}</span>
                   </div>
                 </div>
-                
+
                 <div class="product-actions">
-                  <button class="product-btn details-btn">
+                  <button class="product-btn details-btn" @click="navigateToProductDetail(product._id)">
                     <i class="fas fa-eye"></i> Ver detalles
                   </button>
-                  <button class="product-btn cart-btn">
-                    <i class="fas fa-shopping-cart"></i> Añadir
+                  <button class="product-btn cart-btn" @click="addToCartFromList(product)"
+                    :disabled="product.stock <= 0"> <i class="fas fa-shopping-cart"></i> Añadir
                   </button>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div v-else-if="products.length > 0 && filteredProducts.length === 0" class="empty-state">
             <i class="fas fa-search"></i>
             <p>No se encontraron productos que coincidan con tu búsqueda</p>
@@ -252,12 +241,12 @@
               Limpiar filtro
             </button>
           </div>
-          
+
           <div v-else class="empty-state">
             <i class="fas fa-box-open"></i>
             <p>Actualmente no hay productos registrados para este comercio</p>
           </div>
-          
+
           <div v-if="filteredProducts.length > 6" class="load-more-container">
             <button class="load-more-btn">
               <i class="fas fa-chevron-down"></i> Cargar más productos
@@ -265,7 +254,7 @@
           </div>
         </div>
       </section>
-      
+
       <!-- Related Companies Section -->
       <section class="related-section">
         <div class="section-container">
@@ -273,7 +262,7 @@
             <h2 class="section-title">Comercios Relacionados</h2>
             <p class="section-subtitle">También te pueden interesar</p>
           </div>
-          
+
           <div class="related-companies">
             <div class="related-placeholder">
               <p>Próximamente: Descubre más comercios similares en tu área</p>
@@ -282,7 +271,14 @@
         </div>
       </section>
     </div>
-    
+
+    <div class="cart-alert" v-if="showCartAlert" :class="{ 'visible': showCartAlert }">
+      <div class="alert-content">
+        <i class="fas fa-check-circle"></i>
+        <span>{{ cartAlertMessage }}</span>
+      </div>
+    </div>
+
     <AppFooter />
   </div>
 </template>
@@ -291,6 +287,7 @@
 import axios from 'axios';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
+import CartService from '@/services/CartService';
 
 // Configuración base para axios
 const apiClient = axios.create({
@@ -324,25 +321,27 @@ export default {
       error: null,
       productSearch: '',
       sortOption: 'name-asc',
-      displayedProducts: 6
+      displayedProducts: 6,
+      showCartAlert: false,
+      cartAlertMessage: ''
     };
   },
   computed: {
     filteredProducts() {
       if (!this.products.length) return [];
-      
+
       let result = [...this.products];
-      
+
       // Filtrar por búsqueda
       if (this.productSearch.trim()) {
         const searchTerm = this.productSearch.toLowerCase();
-        result = result.filter(product => 
-          product.nombre.toLowerCase().includes(searchTerm) || 
+        result = result.filter(product =>
+          product.nombre.toLowerCase().includes(searchTerm) ||
           (product.descripcion && product.descripcion.toLowerCase().includes(searchTerm)) ||
           (this.getBrandName(product.marca).toLowerCase().includes(searchTerm))
         );
       }
-      
+
       // Ordenar productos
       switch (this.sortOption) {
         case 'name-asc':
@@ -358,7 +357,7 @@ export default {
           result.sort((a, b) => parseFloat(b.precio) - parseFloat(a.precio));
           break;
       }
-      
+
       return result.slice(0, this.displayedProducts);
     }
   },
@@ -366,32 +365,78 @@ export default {
     this.fetchCompanyDetail();
   },
   methods: {
+
+    // Añadir este método en la sección "methods" de ComercioDetail.vue
+    addToCartFromList(product) {
+      if (product.stock <= 0) return;
+
+      // Por defecto añadimos 1 unidad cuando se añade directamente desde la lista
+      const quantity = 1;
+
+      // Mapear el producto de la API al formato esperado por CartService
+      const cartProduct = {
+        id: product._id,
+        name: product.nombre,
+        price: product.precio,
+        image: product.imagen,
+        stock: product.stock
+      };
+
+      // Usar el servicio de carrito para añadir el producto
+      CartService.addToCart(cartProduct, quantity);
+
+      // Mostrar notificación (implementaremos esto a continuación)
+      this.showCartNotification(product.nombre, quantity);
+    },
+
+    // Método para mostrar notificación
+    showCartNotification(productName, quantity) {
+      // Ya no usamos hasOwnProperty, simplemente usamos la propiedad directamente
+      this.cartAlertMessage = `¡${productName} (${quantity}) añadido al carrito!`;
+      this.showCartAlert = true;
+
+      // Ocultar la alerta después de unos segundos
+      setTimeout(() => {
+        this.showCartAlert = false;
+      }, 3000);
+    },
+
+    navigateToProductDetail(productId) {
+      // Redirigir a la vista de detalle de producto, indicando el origen
+      this.$router.push({
+        path: `/product/${productId}`,
+        query: {
+          source: 'comercio',
+          comercioId: this.$route.params.id
+        }
+      });
+    },
     async fetchCompanyDetail() {
       this.loading = true;
       this.error = null;
-      
+
       try {
         const companyId = this.$route.params.id;
-        
+
         // Obtener la compañía por su ID
         const companyResponse = await apiClient.get(`/companies/${companyId}`);
         this.company = companyResponse.data;
-        
+
         // Cargar marcas y productos relacionados con la compañía
         await Promise.all([
           this.fetchBrands(companyId),
           this.fetchProducts(companyId)
         ]);
-        
+
       } catch (error) {
         console.error("Error al cargar los detalles de la compañía:", error);
-        this.error = error.response?.data?.message || 
-                     'Ha ocurrido un error al cargar los detalles de la compañía';
+        this.error = error.response?.data?.message ||
+          'Ha ocurrido un error al cargar los detalles de la compañía';
       } finally {
         this.loading = false;
       }
     },
-    
+
     async fetchBrands(companyId) {
       try {
         const brandResponse = await apiClient.get(`/brands`, {
@@ -403,7 +448,7 @@ export default {
         this.brands = [];
       }
     },
-    
+
     async fetchProducts(companyId) {
       try {
         const productResponse = await apiClient.get(`/products`, {
@@ -415,25 +460,25 @@ export default {
         this.products = [];
       }
     },
-    
+
     loadMoreProducts() {
       this.displayedProducts += 6;
     },
-    
+
     formatPrice(price) {
       return parseFloat(price).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
     },
-    
+
     formatDate(dateString) {
       const options = { year: 'numeric', month: 'long', day: 'numeric' };
       return new Date(dateString).toLocaleDateString('es-ES', options);
     },
-    
+
     truncateDescription(text, maxLength = 100) {
       if (text.length <= maxLength) return text;
       return text.slice(0, maxLength) + '...';
     },
-    
+
     getBrandInitials(name) {
       return name
         .split(' ')
@@ -442,18 +487,18 @@ export default {
         .toUpperCase()
         .slice(0, 2);
     },
-    
+
     getBrandName(brandId) {
       const brand = this.brands.find(b => b._id === brandId);
       return brand ? brand.nombre : 'Sin marca';
     },
-    
+
     getStockClass(stock) {
       if (stock <= 0) return 'out-of-stock';
       if (stock < 10) return 'low-stock';
       return 'in-stock';
     },
-    
+
     getStockLabel(stock) {
       if (stock <= 0) return 'Agotado';
       if (stock < 10) return 'Pocas unidades';
@@ -464,30 +509,46 @@ export default {
 </script>
 
 <style>
-
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');
 
 :root {
   /* Nueva paleta de colores café-beige */
-  --primary-color: #8B7355; /* Café más oscuro para elementos principales */
-  --secondary-color: #593C29; /* Café oscuro para acentos y hover */
-  --accent-color: #D2A679; /* Beige cálido para destacados */
-  --background-color: #F5F0E6; /* Beige claro para fondo general */
-  --card-background: #F0E6D9; /* Beige más claro para tarjetas */
-  --hover-color: #A68064; /* Café medio para efectos hover */
-  --text-color: #3A2A1B; /* Café muy oscuro para texto principal */
-  --text-light: #6B5B4D; /* Café claro para texto secundario */
-  --border-color: #D9C8B4; /* Beige medio para bordes */
-  --shadow: 0 8px 20px rgba(107, 91, 77, 0.1); /* Sombra con color café */
-  --badge-background: #E6D0B8; /* Beige para badges */
-  --badge-text: #86624E; /* Café medio para texto en badges */
-  --button-hover: #6B4C35; /* Café oscuro para hover en botones */
+  --primary-color: #8B7355;
+  /* Café más oscuro para elementos principales */
+  --secondary-color: #593C29;
+  /* Café oscuro para acentos y hover */
+  --accent-color: #D2A679;
+  /* Beige cálido para destacados */
+  --background-color: #F5F0E6;
+  /* Beige claro para fondo general */
+  --card-background: #F0E6D9;
+  /* Beige más claro para tarjetas */
+  --hover-color: #A68064;
+  /* Café medio para efectos hover */
+  --text-color: #3A2A1B;
+  /* Café muy oscuro para texto principal */
+  --text-light: #6B5B4D;
+  /* Café claro para texto secundario */
+  --border-color: #D9C8B4;
+  /* Beige medio para bordes */
+  --shadow: 0 8px 20px rgba(107, 91, 77, 0.1);
+  /* Sombra con color café */
+  --badge-background: #E6D0B8;
+  /* Beige para badges */
+  --badge-text: #86624E;
+  /* Café medio para texto en badges */
+  --button-hover: #6B4C35;
+  /* Café oscuro para hover en botones */
   --transition: all 0.3s ease;
-  --input-background: #F8F4EE; /* Beige muy claro para inputs */
-  --success-color: #7D9D64; /* Verde oliva para estados positivos */
-  --warning-color: #D9A566; /* Naranja cálido para advertencias */
-  --error-color: #C27474; /* Rojo-café para errores */
+  --input-background: #F8F4EE;
+  /* Beige muy claro para inputs */
+  --success-color: #7D9D64;
+  /* Verde oliva para estados positivos */
+  --warning-color: #D9A566;
+  /* Naranja cálido para advertencias */
+  --error-color: #C27474;
+  /* Rojo-café para errores */
 }
 
 /* Estilos Generales */
@@ -527,7 +588,9 @@ export default {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-container p {
@@ -1359,24 +1422,24 @@ export default {
   .company-header {
     margin-top: -60px;
   }
-  
+
   .profile-container {
     width: 160px;
   }
-  
+
   .profile-wrapper {
     width: 160px;
     height: 160px;
   }
-  
+
   .company-name {
     font-size: 2rem;
   }
-  
+
   .section-title {
     font-size: 1.8rem;
   }
-  
+
   .banner-container {
     height: 280px;
   }
@@ -1386,50 +1449,51 @@ export default {
   .banner-container {
     height: 220px;
   }
-  
+
   .company-header {
     flex-direction: column;
     align-items: center;
     text-align: center;
     margin-top: -50px;
   }
-  
+
   .profile-container {
     margin-right: 0;
     margin-bottom: 1.5rem;
   }
-  
+
   .company-info-primary {
     width: 100%;
   }
-  
+
   .company-details {
     justify-content: center;
   }
-  
+
   .actions-container {
     margin-left: 0;
     width: 100%;
     justify-content: center;
   }
-  
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .products-grid {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1.5rem;
   }
-  
-  .search-box, .filter-options {
+
+  .search-box,
+  .filter-options {
     width: 100%;
   }
-  
+
   .sort-select {
     width: 100%;
   }
-  
+
   .filter-container {
     padding: 1.2rem;
   }
@@ -1439,57 +1503,120 @@ export default {
   .banner-container {
     height: 180px;
   }
-  
+
   .profile-wrapper {
     width: 140px;
     height: 140px;
   }
-  
+
   .company-name {
     font-size: 1.8rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .brands-container {
     flex-direction: column;
     align-items: center;
     gap: 1.5rem;
   }
-  
+
   .brand-card {
     width: 100%;
   }
-  
+
   .products-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .product-actions {
     flex-direction: column;
   }
-  
+
   .section-title {
     font-size: 1.5rem;
   }
-  
+
   .section-subtitle {
     font-size: 1rem;
   }
-  
+
   .product-content {
     padding: 1.5rem;
   }
-  
+
   .company-info-primary {
     padding: 1.5rem;
   }
-  
+
   .related-placeholder {
     padding: 2.5rem 1.5rem;
   }
 }
 
+/* Estilos para la notificación del carrito - Añadir a las hojas de estilo o en la etiqueta <style> del componente */
+
+.cart-alert {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 1000;
+  background-color: #4caf50;
+  color: white;
+  padding: 15px 20px;
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  transform: translateY(100px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cart-alert.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alert-content i {
+  font-size: 1.5rem;
+}
+
+/* Animación para la aparición y desaparición */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOutDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+}
+
+.cart-alert.visible {
+  animation: fadeInUp 0.3s forwards;
+}
+
+.cart-alert:not(.visible) {
+  animation: fadeOutDown 0.3s forwards;
+}
 </style>

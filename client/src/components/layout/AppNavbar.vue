@@ -152,20 +152,6 @@ export default {
     <!-- Sección izquierda -->
     <div class="left-section">
       <AppMenu />
-      <div class="search-container" :class="{ 'active': searchActive, 'mobile-expanded': mobileExpanded }">
-        <input
-          ref="searchInput"
-          type="text"
-          v-model="searchQuery"
-          placeholder="Search..."
-          class="search-input"
-          @focus="activateSearch"
-          @blur="deactivateSearch"
-        />
-        <button class="search-button" aria-label="Search">
-          <span class="search-icon">🔍</span>
-        </button>
-      </div>
     </div>
 
     <!-- Logo centrado -->
