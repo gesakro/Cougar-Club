@@ -27,6 +27,15 @@ export default {
       return !!localStorage.getItem('token');
     });
     
+    // Computed properties para los roles
+    const isAdmin = computed(() => {
+      return userRole.value === 'Administrador';
+    });
+    
+    const isGerente = computed(() => {
+      return userRole.value === 'Gerente';
+    });
+    
     // Métodos
     const toggleUserMenu = () => {
       userMenuOpen.value = !userMenuOpen.value;
@@ -50,6 +59,7 @@ export default {
       localStorage.removeItem('userRole');
       localStorage.removeItem('userName');
       localStorage.removeItem('userEmail');
+      localStorage.removeItem('userCompany');
       
       // Actualizar variables reactivas
       userName.value = "";
@@ -75,6 +85,9 @@ export default {
         userName.value = localStorage.getItem('userName') || 'Usuario';
         userEmail.value = localStorage.getItem('userEmail') || '';
         userRole.value = localStorage.getItem('userRole') || 'Usuario';
+        
+        // Verificar y mostrar el rol en la consola para depuración
+        console.log('Rol de usuario cargado:', userRole.value);
       }
     };
     
@@ -119,6 +132,8 @@ export default {
       userEmail,
       userRole,
       isLoggedIn,
+      isAdmin,
+      isGerente,
       searchInput,
       userMenu,
       toggleUserMenu,
@@ -191,21 +206,19 @@ export default {
           </router-link>
           
           <!-- Enlaces específicos para administradores -->
-          <template v-if="isLoggedIn && userRole === 'admin'">
+          <template v-if="isLoggedIn && userRole === 'Administrador'">
             <div class="dropdown-divider"></div>
             <router-link to="/gestionar-comercio" class="dropdown-item">
               <i class="fas fa-store"></i> Gestionar Comercio
             </router-link>
-            <router-link to="/admin" class="dropdown-item">
+            <router-link to="/gestionar-usuario" class="dropdown-item">
               <i class="fas fa-user-shield"></i> Panel Admin
             </router-link>
-            <router-link to="/reportes" class="dropdown-item">
-              <i class="fas fa-chart-bar"></i> Reportes
-            </router-link>
+
           </template>
           
-          <!-- Enlaces específicos para vendedores -->
-          <template v-if="isLoggedIn && userRole === 'vendedor'">
+          <!-- Enlaces específicos para gerentes -->
+          <template v-if="isLoggedIn && userRole === 'Gerente'">
             <div class="dropdown-divider"></div>
             <router-link to="/mis-ventas" class="dropdown-item">
               <i class="fas fa-tags"></i> Mis Ventas
@@ -214,8 +227,6 @@ export default {
               <i class="fas fa-boxes"></i> Inventario
             </router-link>
           </template>
-          
-          <!-- Enlaces específicos para clientes (ya están incluidos arriba) -->
           
           <div class="dropdown-divider" v-if="isLoggedIn"></div>
           
@@ -244,6 +255,7 @@ export default {
   </nav>
 </template>
 
+<!-- El estilo se mantiene igual -->
 <style scoped>
 /* === ESTRUCTURA PRINCIPAL === */
 .navbar {
