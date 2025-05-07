@@ -5,17 +5,16 @@ const Product = require('../models/Product');
 // Crear una nueva compañía
 exports.createCompany = async (req, res) => {
   try {
-    // Desestructuramos los campos del req.body
-    const { nombre, email, plan, imagenBanner, imagenPerfil, productos } = req.body;
+    // Se obtienen los datos del body y se incluyen las URLs ya obtenidas
+    const { nombre, email, plan, productos, imagenBanner, imagenPerfil } = req.body;
 
-    // Creamos el objeto de la compañía con valores por defecto si es necesario
     const company = new Company({
       nombre,
       email,
-      plan: plan || 'Mensual',            // Valor por defecto: 'Mensual'
-      imagenBanner: imagenBanner || '',     // URL del banner
-      imagenPerfil: imagenPerfil || '',     // URL de la imagen de perfil
-      productos: productos || []            // Array de productos (puede estar vacío)
+      plan: plan || 'Mensual',
+      imagenBanner: imagenBanner || '',  // URL proveniente de Firebase
+      imagenPerfil: imagenPerfil || '',  // URL proveniente de Firebase
+      productos: productos || []
     });
 
     const savedCompany = await company.save();
