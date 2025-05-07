@@ -11,9 +11,9 @@
       </div>
       <div v-if="uploading" class="upload-progress">
         <div class="progress-bar">
-          <div class="progress-fill"></div>
+          <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
         </div>
-        <p>Subiendo imagen...</p>
+        <p>Subiendo imagen: {{ uploadProgress }}%</p>
       </div>
       <div v-if="imageUrl" class="upload-preview">
         <p>Imagen subida correctamente</p>
@@ -41,7 +41,7 @@
 </template>
 
 <script>
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref as storageRef,  uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { storage } from "../config.js"; // ajusta la ruta si es necesario
 import { ref, computed, onMounted } from 'vue';
 
@@ -51,6 +51,7 @@ export default {
     const uploading = ref(false);
     const errorMessage = ref('');
     const userRole = ref('');
+    const uploadProgress = ref(0);
     
     // Computed property para verificar si el usuario está autorizado
     const isAuthorized = computed(() => {
@@ -79,20 +80,51 @@ export default {
         return;
       }
       
+      // Validar tamaño del archivo (10MB max)
+      const maxSize = 10 * 1024 * 1024; // 10MB en bytes
+      if (file.size > maxSize) {
+        errorMessage.value = 'La imagen excede el tamaño máximo permitido (10MB)';
+        return;
+      }
+      
       errorMessage.value = '';
       uploading.value = true;
+      uploadProgress.value = 0;
       
       try {
         // Crear una referencia única con timestamp
         const timestamp = new Date().getTime();
-        const fileRef = storageRef(storage, `imagenes/${timestamp}_${file.name}`);
+        const fileRef = storageRef(storage, `imagenes/${timestamp}_${file.name.replace(/\s+/g, '_')}`);
         
-        await uploadBytes(fileRef, file);
-        imageUrl.value = await getDownloadURL(fileRef);
-        uploading.value = false;
+        // Usar uploadBytesResumable para seguimiento del progreso
+        const uploadTask = uploadBytesResumable(fileRef, file);
+        
+        // Monitorear progreso de la carga
+        uploadTask.on('state_changed', 
+          (snapshot) => {
+            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            uploadProgress.value = progress;
+          },
+          (error) => {
+            console.error("Error al subir imagen:", error);
+            errorMessage.value = 'Error al subir la imagen. Por favor, intenta de nuevo.';
+            uploading.value = false;
+          },
+          async () => {
+            // Carga completada exitosamente
+            try {
+              imageUrl.value = await getDownloadURL(uploadTask.snapshot.ref);
+              uploading.value = false;
+            } catch (urlError) {
+              console.error("Error al obtener URL:", urlError);
+              errorMessage.value = 'Error al obtener la URL de la imagen.';
+              uploading.value = false;
+            }
+          }
+        );
       } catch (error) {
-        console.error("Error al subir imagen:", error);
-        errorMessage.value = 'Error al subir la imagen. Por favor, intenta de nuevo.';
+        console.error("Error general:", error);
+        errorMessage.value = 'Error inesperado. Por favor, intenta de nuevo.';
         uploading.value = false;
       }
     };
@@ -100,6 +132,7 @@ export default {
     const resetUpload = () => {
       imageUrl.value = null;
       errorMessage.value = '';
+      uploadProgress.value = 0;
       // Limpiar el input file
       const fileInput = document.getElementById('file-upload');
       if (fileInput) {
@@ -111,6 +144,7 @@ export default {
       imageUrl,
       uploading,
       errorMessage,
+      uploadProgress,
       isAuthorized,
       uploadImage,
       resetUpload
@@ -219,14 +253,7 @@ input[type="file"] {
   height: 100%;
   background-color: #73614C;
   border-radius: 4px;
-  width: 0;
-  animation: progress 2s infinite ease-in-out;
-}
-
-@keyframes progress {
-  0% { width: 0; }
-  50% { width: 70%; }
-  100% { width: 100%; }
+  transition: width 0.3s ease;
 }
 
 .upload-preview {
