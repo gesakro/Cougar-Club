@@ -19,12 +19,10 @@ const routes = [
       requiresScrollTop: true // Siempre hacer scroll al inicio
     },
     props: (route) => ({ 
-      // Pasa los query params como props
       collectionFilter: route.query.collection,
       searchQuery: route.query.q
     })
   },
-
   {
     path: '/product/:id',
     name: 'ProductDetail',
@@ -34,7 +32,6 @@ const routes = [
     },
     props: true
   },
-
   {
     path: '/login',
     name: 'Login',
@@ -45,14 +42,6 @@ const routes = [
     }
   },
   {
-    path: '/:pathMatch(.*)*',
-    name: 'NotFound',
-    component: () => import('@/views/NotFound.vue'),
-    meta: {
-      title: 'Página no encontrada | Cougar Club'
-    }
-  },
-  {
     path: '/cart',
     name: 'Cart',
     component: () => import('@/views/CartView.vue'),
@@ -60,7 +49,6 @@ const routes = [
       title: 'Carrito | Cougar Club'
     }
   },
-
   {
     path: '/signup',
     name: 'signup',
@@ -69,7 +57,23 @@ const routes = [
       title: 'Registro | Cougar Club'
     }
   },
-
+  {
+    path: '/comercios',
+    name: 'comercios',
+    component: () => import('@/views/ComerciosCC/ComercioLista.vue'),
+    meta: {
+      title: 'Comercios | Cougar Club'
+    }
+  },
+  {
+    path: '/comercios/:id',
+    name: 'ComercioDetail',
+    component: () => import('@/views/ComerciosCC/comerciosDetail.vue'),
+    meta: {
+      title: 'Detalle Comercio | Cougar Club'
+    },
+    props: true
+  },
   {
     path: '/recoverPassword',
     name: 'RecoverPassword',
@@ -83,33 +87,47 @@ const routes = [
     name: 'GestionarComercio',
     component: () => import('@/views/Admin/companyManagement.vue'),
     meta: {
-      title: 'Recuperar contraseña | Cougar Club'
+      title: 'Gestionar Comercio | Cougar Club',
+      requiresAdmin: true // Solo usuarios Administrador podrán verla
+    }
+  },
+  {
+    path: '/gestionar-usuario',
+    name: 'GestionarUsuario',
+    component: () => import('@/views/Admin/userManagement.vue'),
+    meta: {
+      title: 'Gestionar Usuario | Cougar Club',
+      requiresAdmin: true // Solo usuarios Administrador podrán verla
+    }
+  },
+  // Esta ruta catch-all DEBE SER la última
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/views/NotFound.vue'),
+    meta: {
+      title: 'Página no encontrada | Cougar Club'
     }
   }
-  
 ]
 
 const router = createRouter({
   history: createWebHistory('/'),
-
   routes,
   scrollBehavior(to, from, savedPosition) {
-    // Comportamiento mejorado del scroll
     if (savedPosition) {
       return savedPosition
     }
     
-    // Scroll to top para rutas que lo requieran
     if (to.meta.requiresScrollTop) {
       return { top: 0, behavior: 'smooth' }
     }
     
-    // Scroll a elementos con hash
     if (to.hash) {
       return {
         el: to.hash,
         behavior: 'smooth',
-        top: 100 // Offset para el navbar
+        top: 100
       }
     }
     
@@ -117,20 +135,19 @@ const router = createRouter({
   }
 })
 
-// Guardia global para el título y otras meta propiedades
 router.beforeEach((to, from, next) => {
-  // Actualizar título
   document.title = to.meta.title || 'Cougar Club'
-  
-  // Aquí puedes añadir más lógica global:
-  // - Analytics
-  // - Verificación de autenticación
-  // - Carga de datos iniciales
-  
+
+  if (to.meta.requiresAdmin) {
+    const userRole = localStorage.getItem('userRole')
+    if (userRole !== 'Administrador') {
+      return next({ name: 'Home' })
+    }
+  }
+
   next()
 })
 
-// Opcional: Guardia para scroll después de navegación
 router.afterEach((to) => {
   if (to.meta.requiresScrollTop && !to.hash) {
     window.scrollTo({ top: 0, behavior: 'auto' })
