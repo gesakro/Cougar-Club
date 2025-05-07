@@ -1,91 +1,86 @@
-// services/CartService.js
+// CartService.js
+const CART_KEY = 'cart_items';
 
-// Obtener el carrito desde localStorage o inicializar un array vacío
-const getCart = () => {
-    const cartJSON = localStorage.getItem('cart')
-    return cartJSON ? JSON.parse(cartJSON) : []
-  }
+const CartService = {
+  // Obtener el carrito desde localStorage
+  getCart() {
+    const cartData = localStorage.getItem(CART_KEY);
+    return cartData ? JSON.parse(cartData) : [];
+  },
   
-  // Guardar el carrito en localStorage
-  const saveCart = (cart) => {
-    localStorage.setItem('cart', JSON.stringify(cart))
-  }
+  // Obtener el número total de items en el carrito
+  getCartItemCount() {
+    const cart = this.getCart();
+    return cart.reduce((acc, item) => acc + item.quantity, 0);
+  },
   
   // Añadir un producto al carrito
-  const addToCart = (product, quantity = 1) => {
-    const cart = getCart()
+  addToCart(product, quantity = 1) {
+    const cart = this.getCart();
     
     // Comprobar si el producto ya está en el carrito
-    const existingItem = cart.find(item => item.id === product.id)
+    const existingItemIndex = cart.findIndex(item => item.id === product.id);
     
-    if (existingItem) {
-      // Si ya existe, actualizar la cantidad
-      existingItem.quantity += quantity
+    if (existingItemIndex >= 0) {
+      // Actualizar cantidad si ya existe
+      cart[existingItemIndex].quantity += quantity;
     } else {
-      // Si no existe, añadirlo al carrito
+      // Añadir nuevo producto al carrito
       cart.push({
         id: product.id,
         name: product.name,
         price: product.price,
         image: product.image,
         quantity: quantity
-      })
+      });
     }
     
-    saveCart(cart)
-    // Emitir un evento personalizado para que los componentes puedan reaccionar
-    window.dispatchEvent(new CustomEvent('cart-updated'))
-    return cart
-  }
+    // Guardar en localStorage
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    
+    // Notificar cambios en el carrito
+    this._notifyCartUpdated();
+    
+    return true;
+  },
   
   // Eliminar un producto del carrito
-  const removeFromCart = (productId) => {
-    let cart = getCart()
-    cart = cart.filter(item => item.id !== productId)
-    saveCart(cart)
-    window.dispatchEvent(new CustomEvent('cart-updated'))
-    return cart
-  }
-  
-  // Actualizar la cantidad de un producto en el carrito
-  const updateCartItemQuantity = (productId, quantity) => {
-    const cart = getCart()
-    const item = cart.find(item => item.id === productId)
+  removeFromCart(productId) {
+    let cart = this.getCart();
+    cart = cart.filter(item => item.id !== productId);
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
     
-    if (item) {
-      item.quantity = quantity
-      saveCart(cart)
-      window.dispatchEvent(new CustomEvent('cart-updated'))
+    // Notificar cambios en el carrito
+    this._notifyCartUpdated();
+  },
+  
+  // Actualizar la cantidad de un producto
+  updateCartItemQuantity(productId, quantity) {
+    const cart = this.getCart();
+    const itemIndex = cart.findIndex(item => item.id === productId);
+    
+    if (itemIndex >= 0) {
+      cart[itemIndex].quantity = quantity;
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+      
+      // Notificar cambios en el carrito
+      this._notifyCartUpdated();
     }
+  },
+  
+  // Vaciar carrito
+  clearCart() {
+    localStorage.removeItem(CART_KEY);
     
-    return cart
-  }
+    // Notificar cambios en el carrito
+    this._notifyCartUpdated();
+  },
   
-  // Vaciar el carrito
-  const clearCart = () => {
-    localStorage.removeItem('cart')
-    window.dispatchEvent(new CustomEvent('cart-updated'))
-    return []
+  // Método privado para notificar a los componentes sobre los cambios en el carrito
+  _notifyCartUpdated() {
+    // Emitir un evento personalizado para notificar a los componentes
+    window.dispatchEvent(new CustomEvent('cart-updated'));
   }
-  
-  // Obtener el número total de artículos en el carrito
-  const getCartTotalItems = () => {
-    const cart = getCart()
-    return cart.reduce((total, item) => total + item.quantity, 0)
-  }
-  
-  // Obtener el precio total del carrito
-  const getCartTotalPrice = () => {
-    const cart = getCart()
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0)
-  }
-  
-  export default {
-    getCart,
-    addToCart,
-    removeFromCart,
-    updateCartItemQuantity,
-    clearCart,
-    getCartTotalItems,
-    getCartTotalPrice
-  }
+};
+
+export default CartService;

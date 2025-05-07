@@ -1,317 +1,369 @@
 <template>
-    <div class="product-detail-view">
-      <AppNavbar />
+  <div class="product-detail-view">
+    <AppNavbar />
+    
+    <main class="detail-container">
+      <div class="breadcrumb">
+        <router-link to="/products" class="breadcrumb-link">
+          <i class="fas fa-arrow-left"></i> Volver a productos
+        </router-link>
+      </div>
       
-      <main class="detail-container">
-        <div class="breadcrumb">
-          <router-link to="/products" class="breadcrumb-link">
-            <i class="fas fa-arrow-left"></i> Volver a productos
-          </router-link>
+      <div v-if="loading" class="loading-container">
+        <div class="loading-spinner"></div>
+      </div>
+      
+      <div v-else-if="product" class="product-content">
+        <div class="product-gallery">
+          <div class="main-image">
+            <img :src="product.image" :alt="product.name" class="product-img" />
+          </div>
+          <div class="image-thumbnails">
+            <!-- En una tienda real podrías tener múltiples imágenes -->
+            <div class="thumbnail active">
+              <img :src="product.image" :alt="product.name" class="thumbnail-img" />
+            </div>
+            <div class="thumbnail placeholder"></div>
+            <div class="thumbnail placeholder"></div>
+            <div class="thumbnail placeholder"></div>
+          </div>
         </div>
         
-        <div v-if="loading" class="loading-container">
-          <div class="loading-spinner"></div>
-        </div>
-        
-        <div v-else-if="product" class="product-content">
-          <div class="product-gallery">
-            <div class="main-image">
-              <img :src="product.image" :alt="product.name" class="product-img" />
+        <div class="product-info">
+          <h1 class="product-title">{{ product.name }}</h1>
+          
+          <div class="product-meta">
+            <div class="product-rating">
+              <i v-for="i in 5" :key="i" class="fas fa-star" 
+                 :class="{ 'filled': i <= Math.floor(product.rating), 'half-filled': i - 0.5 === Math.floor(product.rating) }"></i>
+              <span class="rating-value">{{ product.rating.toFixed(1) }}</span>
             </div>
-            <div class="image-thumbnails">
-              <!-- En una tienda real podrías tener múltiples imágenes -->
-              <div class="thumbnail active">
-                <img :src="product.image" :alt="product.name" class="thumbnail-img" />
-              </div>
-              <div class="thumbnail placeholder"></div>
-              <div class="thumbnail placeholder"></div>
-              <div class="thumbnail placeholder"></div>
-            </div>
+            
+            <div class="product-category">Categoría: {{ formatCategory(product.category) }}</div>
           </div>
           
-          <div class="product-info">
-            <h1 class="product-title">{{ product.name }}</h1>
-            
-            <div class="product-meta">
-              <div class="product-rating">
-                <i v-for="i in 5" :key="i" class="fas fa-star" 
-                   :class="{ 'filled': i <= Math.floor(product.rating), 'half-filled': i - 0.5 === Math.floor(product.rating) }"></i>
-                <span class="rating-value">{{ product.rating.toFixed(1) }}</span>
-              </div>
-              
-              <div class="product-category">Categoría: {{ formatCategory(product.category) }}</div>
-            </div>
-            
-            <div class="product-price">{{ formatPrice(product.price) }}</div>
-            
-            <div class="product-availability" :class="{ 'out-of-stock': product.stock <= 0 }">
-              {{ product.stock > 0 ? 'En Stock' : 'Agotado' }}
-            </div>
-            
-            <div class="product-description">
-              <h3>Descripción</h3>
-              <p>{{ product.description || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.' }}</p>
-            </div>
-            
-            <div class="product-actions">
-              <div class="quantity-selector">
-                <button @click="decreaseQuantity" :disabled="quantity <= 1 || product.stock <= 0" class="quantity-btn">
-                  <i class="fas fa-minus"></i>
-                </button>
-                <input type="number" v-model.number="quantity" min="1" :max="product.stock" :disabled="product.stock <= 0" class="quantity-input" />
-                <button @click="increaseQuantity" :disabled="quantity >= product.stock || product.stock <= 0" class="quantity-btn">
-                  <i class="fas fa-plus"></i>
-                </button>
-              </div>
-              
-              <button 
-                @click="addToCart" 
-                class="add-to-cart-btn"
-                :disabled="product.stock <= 0">
-                <i class="fas fa-shopping-cart"></i>
-                {{ product.stock > 0 ? 'Añadir al carrito' : 'No disponible' }}
+          <div class="product-price">{{ formatPrice(product.price) }}</div>
+          
+          <div class="product-availability" :class="{ 'out-of-stock': product.stock <= 0 }">
+            {{ product.stock > 0 ? 'En Stock' : 'Agotado' }}
+          </div>
+          
+          <div class="product-description">
+            <h3>Descripción</h3>
+            <p>{{ product.description || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.' }}</p>
+          </div>
+          
+          <div class="product-actions">
+            <div class="quantity-selector">
+              <button @click="decreaseQuantity" :disabled="quantity <= 1 || product.stock <= 0" class="quantity-btn">
+                <i class="fas fa-minus"></i>
+              </button>
+              <input type="number" v-model.number="quantity" min="1" :max="product.stock" :disabled="product.stock <= 0" class="quantity-input" />
+              <button @click="increaseQuantity" :disabled="quantity >= product.stock || product.stock <= 0" class="quantity-btn">
+                <i class="fas fa-plus"></i>
               </button>
             </div>
             
-            <div class="product-features">
-              <div class="feature">
-                <i class="fas fa-truck"></i>
-                <span>Envío gratuito para pedidos superiores a 50€</span>
-              </div>
-              <div class="feature">
-                <i class="fas fa-undo"></i>
-                <span>Devoluciones gratuitas dentro de los 30 días</span>
-              </div>
-              <div class="feature">
-                <i class="fas fa-shield-alt"></i>
-                <span>Garantía de calidad en todos los productos</span>
-              </div>
+            <button 
+              @click="addToCart" 
+              class="add-to-cart-btn"
+              :disabled="product.stock <= 0">
+              <i class="fas fa-shopping-cart"></i>
+              {{ product.stock > 0 ? 'Añadir al carrito' : 'No disponible' }}
+            </button>
+          </div>
+          
+          <div class="product-features">
+            <div class="feature">
+              <i class="fas fa-truck"></i>
+              <span>Envío gratuito para pedidos superiores a 50€</span>
+            </div>
+            <div class="feature">
+              <i class="fas fa-undo"></i>
+              <span>Devoluciones gratuitas dentro de los 30 días</span>
+            </div>
+            <div class="feature">
+              <i class="fas fa-shield-alt"></i>
+              <span>Garantía de calidad en todos los productos</span>
             </div>
           </div>
         </div>
-        
-        <div v-else class="error-message">
-          <div class="placeholder-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#b38b6d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-              <path d="M16 16c-1.5-1.5-3.5-2-6-2s-4.5.5-6 2"></path>
-            </svg>
-          </div>
-          <h3>Producto no encontrado</h3>
-          <p>El producto que buscas no existe o no está disponible</p>
-          <router-link to="/products" class="return-btn">Volver a productos</router-link>
-        </div>
-        
-        <section v-if="product && relatedProducts.length" class="related-products">
-          <h2 class="section-title">Productos relacionados</h2>
-          <ProductSection 
-            :products="relatedProducts"
-            @product-click="handleRelatedProductClick"
-          />
-        </section>
-      </main>
+      </div>
       
-      <AppFooter />
+      <div v-else class="error-message">
+        <div class="placeholder-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#b38b6d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+            <path d="M16 16c-1.5-1.5-3.5-2-6-2s-4.5.5-6 2"></path>
+          </svg>
+        </div>
+        <h3>Producto no encontrado</h3>
+        <p>El producto que buscas no existe o no está disponible</p>
+        <router-link to="/products" class="return-btn">Volver a productos</router-link>
+      </div>
+      
+      <section v-if="product && relatedProducts.length" class="related-products">
+        <h2 class="section-title">Productos relacionados</h2>
+        <ProductSection 
+          :products="relatedProducts"
+          @product-click="handleRelatedProductClick"
+        />
+      </section>
+    </main>
+    
+    <AppFooter />
+    
+    <!-- Alerta para mostrar cuando se añade un producto al carrito -->
+    <div class="cart-alert" v-if="showCartAlert" :class="{ 'visible': showCartAlert }">
+      <div class="alert-content">
+        <i class="fas fa-check-circle"></i>
+        <span>{{ cartAlertMessage }}</span>
+      </div>
     </div>
-  </template>
-  
-  <script>
-  import AppNavbar from '@/components/layout/AppNavbar.vue'
-  import AppFooter from '@/components/layout/AppFooter.vue'
-  import ProductSection from '@/components/product/ProductSection.vue'
-  import CartService from '@/services/CartService'
-  
-  export default {
-    name: 'ProductDetail',
-    components: {
-      AppNavbar,
-      AppFooter,
-      ProductSection
-    },
-    data() {
-      return {
-        product: null,
-        loading: true,
-        quantity: 1,
-        relatedProducts: []
-      }
-    },
-    methods: {
-      loadProduct() {
-        this.loading = true
+  </div>
+</template>
+
+<script>
+import AppNavbar from '@/components/layout/AppNavbar.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
+import ProductSection from '@/components/product/ProductSection.vue'
+import CartService from '@/services/CartService'
+
+export default {
+  name: 'ProductDetail',
+  components: {
+    AppNavbar,
+    AppFooter,
+    ProductSection
+  },
+  data() {
+    return {
+      product: null,
+      loading: true,
+      quantity: 1,
+      relatedProducts: [],
+      showCartAlert: false,
+      cartAlertMessage: ''
+    }
+  },
+  methods: {
+    loadProduct() {
+      this.loading = true
+      
+      // Simulamos obtener el producto por ID desde la API
+      // En una aplicación real, esto se haría con una llamada a la API
+      setTimeout(() => {
+        // Obtener el ID del producto de los parámetros de la ruta
+        const productId = parseInt(this.$route.params.id)
         
-        // Simulamos obtener el producto por ID desde la API
-        // En una aplicación real, esto se haría con una llamada a la API
-        setTimeout(() => {
-          // Obtener el ID del producto de los parámetros de la ruta
-          const productId = parseInt(this.$route.params.id)
-          
-          // Obtener datos de ejemplo (en producción, esto vendría de tu API)
-          const allProducts = [
-            { 
-              id: 1, 
-              name: 'Zapatos Deportivos', 
-              price: 89.99, 
-              category: 'footwear', 
-              stock: 10, 
-              rating: 4.5,
-              isTrending: true,
-              isNew: true,
-              isBestSeller: true,
-              description: 'Zapatos deportivos de alta calidad',
-              image: require('@/assets/img/clothes/zapatilla.jpg')
-            },
-            { 
-              id: 2, 
-              name: 'Camiseta Básica', 
-              price: 29.99, 
-              category: 'clothing', 
-              stock: 25, 
-              rating: 4.2,
-              isTrending: true,
-              isNew: false,
-              isBestSeller: true,
-              description: 'Camiseta 100% algodón',
-              image: require('@/assets/img/clothes/CamisaBlanca.jpg')
-            },
-            { 
-              id: 3, 
-              name: 'Gorra Ajustable', 
-              price: 24.99, 
-              category: 'accessories', 
-              stock: 15, 
-              rating: 3.8,
-              isTrending: false,
-              isNew: true,
-              isBestSeller: false,
-              description: 'Gorra con ajuste personalizado',
-              image: require('@/assets/img/clothes/gorra.jpg')
-            },
-            { 
-              id: 4, 
-              name: 'Pantalón Casual', 
-              price: 49.99, 
-              category: 'clothing', 
-              stock: 0, 
-              rating: 4.0,
-              isTrending: true,
-              isNew: false,
-              isBestSeller: true,
-              description: 'Pantalón cómodo para uso diario',
-              image: require('@/assets/img/clothes/pantalon.jpg')
-            },{ 
-              id: 5, 
-              name: 'Mochila vanguardista', 
-              price: 99.99, 
-              category: 'clothing', 
-              stock: 0, 
-              rating: 4.0,
-              isTrending: true,
-              isNew: false,
-              isBestSeller: true,
-              description: 'Mochila vanguardista para uso diario',
-              image: require('@/assets/img/clothes/bolso.jpg')
-            },{ 
-              id: 6, 
-              name: 'Bolso de mano', 
-              price: 19.99, 
-              category: 'clothing', 
-              stock: 0, 
-              rating: 4.0,
-              isTrending: true,
-              isNew: false,
-              isBestSeller: false,
-              description: 'Bolso de mano elegante para uso diario',
-              image: require('@/assets/img/clothes/bolso_mano_mujer.jpg')
-            },{ 
-              id: 7, 
-              name: 'Bolso de mano', 
-              price: 40.99, 
-              category: 'clothing', 
-              stock: 0, 
-              rating: 2.0,
-              isTrending: true,
-              isNew: false,
-              isBestSeller: false,
-              description: 'Bolso de mano elegante para uso diario',
-              image: require('@/assets/img/clothes/bikini_mujer.jpg')
-            },{ 
-              id: 8, 
-              name: 'Zapatos de charol', 
-              price: 40.99, 
-              category: 'clothing', 
-              stock: 0, 
-              rating: 2.0,
-              isTrending: true,
-              isNew: false,
-              isBestSeller: false,
-              description: 'Zapatos de charol elegantes para ocasiones especiales',
-              image: require('@/assets/img/clothes/zapatos_charol.jpg')
-            }
-          ]
-          
-          // Buscar el producto por ID
-          this.product = allProducts.find(p => p.id === productId)
-          
-          // Buscar productos relacionados (misma categoría)
-          if (this.product) {
-            this.relatedProducts = allProducts
-              .filter(p => p.id !== this.product.id && p.category === this.product.category)
-              .slice(0, 4)
+        // Obtener datos de ejemplo (en producción, esto vendría de tu API)
+        const allProducts = [
+          { 
+            id: 1, 
+            name: 'Zapatos Deportivos', 
+            price: 89.99, 
+            category: 'footwear', 
+            stock: 10, 
+            rating: 4.5,
+            isTrending: true,
+            isNew: true,
+            isBestSeller: true,
+            description: 'Zapatos deportivos de alta calidad',
+            image: require('@/assets/img/clothes/zapatilla.jpg')
+          },
+          { 
+            id: 2, 
+            name: 'Camiseta Básica', 
+            price: 29.99, 
+            category: 'clothing', 
+            stock: 25, 
+            rating: 4.2,
+            isTrending: true,
+            isNew: false,
+            isBestSeller: true,
+            description: 'Camiseta 100% algodón',
+            image: require('@/assets/img/clothes/CamisaBlanca.jpg')
+          },
+          { 
+            id: 3, 
+            name: 'Gorra Ajustable', 
+            price: 24.99, 
+            category: 'accessories', 
+            stock: 15, 
+            rating: 3.8,
+            isTrending: false,
+            isNew: true,
+            isBestSeller: false,
+            description: 'Gorra con ajuste personalizado',
+            image: require('@/assets/img/clothes/gorra.jpg')
+          },
+          { 
+            id: 4, 
+            name: 'Pantalón Casual', 
+            price: 49.99, 
+            category: 'clothing', 
+            stock: 0, 
+            rating: 4.0,
+            isTrending: true,
+            isNew: false,
+            isBestSeller: true,
+            description: 'Pantalón cómodo para uso diario',
+            image: require('@/assets/img/clothes/pantalon.jpg')
+          },{ 
+            id: 5, 
+            name: 'Mochila vanguardista', 
+            price: 99.99, 
+            category: 'clothing', 
+            stock: 0, 
+            rating: 4.0,
+            isTrending: true,
+            isNew: false,
+            isBestSeller: true,
+            description: 'Mochila vanguardista para uso diario',
+            image: require('@/assets/img/clothes/bolso.jpg')
+          },{ 
+            id: 6, 
+            name: 'Bolso de mano', 
+            price: 19.99, 
+            category: 'clothing', 
+            stock: 0, 
+            rating: 4.0,
+            isTrending: true,
+            isNew: false,
+            isBestSeller: false,
+            description: 'Bolso de mano elegante para uso diario',
+            image: require('@/assets/img/clothes/bolso_mano_mujer.jpg')
+          },{ 
+            id: 7, 
+            name: 'Bolso de mano', 
+            price: 40.99, 
+            category: 'clothing', 
+            stock: 0, 
+            rating: 2.0,
+            isTrending: true,
+            isNew: false,
+            isBestSeller: false,
+            description: 'Bolso de mano elegante para uso diario',
+            image: require('@/assets/img/clothes/bikini_mujer.jpg')
+          },{ 
+            id: 8, 
+            name: 'Zapatos de charol', 
+            price: 40.99, 
+            category: 'clothing', 
+            stock: 0, 
+            rating: 2.0,
+            isTrending: true,
+            isNew: false,
+            isBestSeller: false,
+            description: 'Zapatos de charol elegantes para ocasiones especiales',
+            image: require('@/assets/img/clothes/zapatos_charol.jpg')
           }
-          
-          this.loading = false
-        }, 800)
-      },
-      formatPrice(price) {
-        return new Intl.NumberFormat('es-ES', { 
-          style: 'currency', 
-          currency: 'EUR' 
-        }).format(price)
-      },
-      formatCategory(category) {
-        const categories = {
-          'footwear': 'Calzado',
-          'clothing': 'Ropa',
-          'accessories': 'Accesorios'
-        }
-        return categories[category] || category
-      },
-      increaseQuantity() {
-        if (this.quantity < this.product.stock) {
-          this.quantity++
-        }
-      },
-      decreaseQuantity() {
-        if (this.quantity > 1) {
-          this.quantity--
-        }
-      },
-      addToCart() {
-        if (this.product.stock <= 0) return
+        ]
         
-        // Usar el servicio de carrito para añadir el producto
-        CartService.addToCart(this.product, this.quantity)
-      },
-      handleRelatedProductClick(product) {
-        // Navegar al nuevo producto
-        this.$router.push(`/product/${product.id}`)
+        // Buscar el producto por ID
+        this.product = allProducts.find(p => p.id === productId)
+        
+        // Buscar productos relacionados (misma categoría)
+        if (this.product) {
+          this.relatedProducts = allProducts
+            .filter(p => p.id !== this.product.id && p.category === this.product.category)
+            .slice(0, 4)
+        }
+        
+        this.loading = false
+      }, 800)
+    },
+    formatPrice(price) {
+      return new Intl.NumberFormat('es-ES', { 
+        style: 'currency', 
+        currency: 'EUR' 
+      }).format(price)
+    },
+    formatCategory(category) {
+      const categories = {
+        'footwear': 'Calzado',
+        'clothing': 'Ropa',
+        'accessories': 'Accesorios'
+      }
+      return categories[category] || category
+    },
+    increaseQuantity() {
+      if (this.quantity < this.product.stock) {
+        this.quantity++
       }
     },
-    created() {
+    decreaseQuantity() {
+      if (this.quantity > 1) {
+        this.quantity--
+      }
+    },
+    addToCart() {
+      if (this.product.stock <= 0) return
+      
+      // Usar el servicio de carrito para añadir el producto
+      CartService.addToCart(this.product, this.quantity)
+      
+      // Mostrar alerta
+      this.cartAlertMessage = `¡${this.product.name} (${this.quantity}) añadido al carrito!`
+      this.showCartAlert = true
+      
+      // Ocultar la alerta después de unos segundos
+      setTimeout(() => {
+        this.showCartAlert = false
+      }, 3000)
+    },
+    handleRelatedProductClick(product) {
+      // Navegar al nuevo producto
+      this.$router.push(`/product/${product.id}`)
+    }
+  },
+  created() {
+    this.loadProduct()
+  },
+  watch: {
+    // Recargar el producto si cambia el ID en la URL
+    '$route.params.id': function() {
       this.loadProduct()
-    },
-    watch: {
-      // Recargar el producto si cambia el ID en la URL
-      '$route.params.id': function() {
-        this.loadProduct()
-      }
     }
   }
-  </script>
-  
+}
+</script>
+
   <style scoped>
+
+  /* Estilos mínimos para la alerta */
+.cart-alert {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #4CAF50;
+  color: white;
+  padding: 15px 25px;
+  border-radius: 5px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+
+.cart-alert.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+}
+
+.alert-content i {
+  margin-right: 10px;
+}
   .product-detail-view {
     display: flex;
     flex-direction: column;
