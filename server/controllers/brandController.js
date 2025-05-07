@@ -1,4 +1,5 @@
 const Brand = require('../models/Brand');
+const Product = require('../models/Product'); // Import Product model to check for dependencies
 
 // Crear una nueva marca
 exports.createBrand = async (req, res) => {
@@ -59,11 +60,37 @@ exports.updateBrand = async (req, res) => {
 // Eliminar una marca
 exports.deleteBrand = async (req, res) => {
   try {
-    const deletedBrand = await Brand.findByIdAndDelete(req.params.id);
-    if (!deletedBrand)
+    const brandId = req.params.id;
+    
+    // Check if there are products using this brand
+    const productsWithBrand = await Product.find({ marca_id: brandId });
+    
+    if (productsWithBrand.length > 0) {
+      // Option 1: Prevent deletion if products reference this brand
+      return res.status(400).json({ 
+        message: 'No se puede eliminar la marca porque hay productos asociados a ella. Actualice o elimine estos productos primero.',
+        productsCount: productsWithBrand.length 
+      });
+      
+      // Option 2 (Alternative): Update products to remove brand reference
+      // Uncomment this if you want to allow brand deletion and automatically remove references
+      /*
+      await Product.updateMany(
+        { marca_id: brandId },
+        { $set: { marca_id: null } }
+      );
+      */
+    }
+    
+    // Now it's safe to delete the brand
+    const deletedBrand = await Brand.findByIdAndDelete(brandId);
+    if (!deletedBrand) {
       return res.status(404).json({ message: 'Marca no encontrada' });
+    }
+    
     res.json({ message: 'Marca eliminada exitosamente' });
   } catch (error) {
+    console.error('Error deleting brand:', error);
     res.status(500).json({ error: error.message });
   }
 };
