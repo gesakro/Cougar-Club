@@ -4,9 +4,9 @@
     
     <main class="detail-container">
       <div class="breadcrumb">
-        <router-link to="/products" class="breadcrumb-link">
-          <i class="fas fa-arrow-left"></i> Volver a productos
-        </router-link>
+        <button @click="goBack" class="breadcrumb-link">
+          <i class="fas fa-arrow-left"></i> Volver
+        </button>
       </div>
       
       <div v-if="loading" class="loading-container">
@@ -166,6 +166,16 @@ export default {
     }
   },
   methods: {
+
+    goBack() {
+      // Si el historial tiene más de una entrada, retrocede; de lo contrario, redirige a '/products'
+      if (window.history.length > 1) {
+        this.$router.back();
+      } else {
+        this.$router.push('/products');
+      }
+    },
+
     loadProduct() {
   this.loading = true;
   

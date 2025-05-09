@@ -120,14 +120,7 @@ const routes = [
       title: 'Página no encontrada | Cougar Club'
     }
   },
-  {
-    path: '/imagen',
-    name: 'ImagenSet',
-    component: () => import('@/views/ImagenSet.vue'),
-    meta: {
-      title: 'imagenes | Cougar Club'
-    }
-  }
+
 ]
 
 const router = createRouter({

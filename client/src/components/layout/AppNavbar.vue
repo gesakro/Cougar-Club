@@ -196,10 +196,6 @@ export default {
             <i class="fas fa-shopping-bag"></i> Mis Pedidos
           </router-link>
           
-          <router-link to="/wishlist" class="dropdown-item" v-if="isLoggedIn">
-            <i class="fas fa-heart"></i> Lista de Deseos
-          </router-link>
-          
           <!-- Enlaces específicos para administradores -->
           <template v-if="isLoggedIn && userRole === 'Administrador'">
             <div class="dropdown-divider"></div>
