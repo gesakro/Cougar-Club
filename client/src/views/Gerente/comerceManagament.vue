@@ -4,6 +4,9 @@ import AuthService from '../../services/authService.js';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
 
+// API base URL - mejor práctica para mantenimiento
+const API_URL = 'http://localhost:5000/api';
+
 export default {
   name: 'CommerceManagement',
   components: {
@@ -27,6 +30,11 @@ export default {
         imagenPerfil: '',
         productos: []
       },
+      // Archivos de imágenes para compañía
+      companyImageFiles: {
+        imagenBanner: null,
+        imagenPerfil: null
+      },
       
       // Modal de productos
       showProductsModal: false,
@@ -46,6 +54,8 @@ export default {
         compania_id: null,
         marca_id: null
       },
+      // Archivo de imagen para producto
+      productImageFile: null,
       
       // Modal de marca
       showBrandModal: false,
@@ -120,12 +130,94 @@ export default {
       return parseFloat(price).toFixed(2);
     },
     
+    // Método centralizado para manejo de errores
+    handleError(error, defaultMessage) {
+      console.error(defaultMessage, error);
+      const errorMessage = error.response?.data?.message || defaultMessage;
+      if (this.$toast) {
+        this.$toast.error(errorMessage);
+      } else {
+        console.error(errorMessage);
+      }
+    },
+    
+    // Métodos para gestión de imágenes
+    handleImageChange(event, target, property) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // Crear URL temporal para previsualización
+      const tempUrl = URL.createObjectURL(file);
+      
+      if (target === 'company') {
+        this.companyImageFiles[property] = file;
+        this.currentCompany[property] = tempUrl;
+      } else if (target === 'product') {
+        this.productImageFile = file;
+        this.currentProduct.imagen = tempUrl;
+      }
+    },
+    
+    // Método para subir imágenes con manejo de errores mejorado
+    async uploadImages(type) {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {
+          'Content-Type': 'multipart/form-data',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        };
+        
+        if (type === 'company') {
+          // Si no hay archivos nuevos, devolver URLs existentes
+          if (!this.companyImageFiles.imagenBanner && !this.companyImageFiles.imagenPerfil) {
+            return { 
+              imagenBannerUrl: this.currentCompany.imagenBanner, 
+              imagenPerfilUrl: this.currentCompany.imagenPerfil 
+            };
+          }
+          
+          const formData = new FormData();
+          
+          if (this.companyImageFiles.imagenBanner) {
+            formData.append('imagenBanner', this.companyImageFiles.imagenBanner);
+          }
+          
+          if (this.companyImageFiles.imagenPerfil) {
+            formData.append('imagenPerfil', this.companyImageFiles.imagenPerfil);
+          }
+          
+          const response = await axios.post(`${API_URL}/companies/upload-images`, formData, { headers });
+          
+          return {
+            imagenBannerUrl: response.data.imagenBannerUrl || this.currentCompany.imagenBanner,
+            imagenPerfilUrl: response.data.imagenPerfilUrl || this.currentCompany.imagenPerfil
+          };
+        } else if (type === 'product') {
+          if (!this.productImageFile) {
+            return { imagenUrl: this.currentProduct.imagen };
+          }
+          
+          const formData = new FormData();
+          formData.append('imagen', this.productImageFile);
+          
+          const response = await axios.post(`${API_URL}/products/upload-image`, formData, { headers });
+          
+          return { 
+            imagenUrl: response.data.imagenUrl || this.currentProduct.imagen 
+          };
+        }
+      } catch (error) {
+        this.handleError(error, `Error al subir imágenes de ${type === 'company' ? 'la compañía' : 'producto'}`);
+        throw error;
+      }
+    },
+    
     // Métodos para la compañía
     async fetchCompanyData() {
       this.loading = true;
       try {
         // Obtener los datos de la compañía del gerente
-        const response = await axios.get(`http://localhost:5000/api/companies/${this.currentUserCompanyId}`);
+        const response = await axios.get(`${API_URL}/companies/${this.currentUserCompanyId}`);
         this.company = response.data;
         
         // Obtener productos de la compañía
@@ -134,14 +226,7 @@ export default {
         // Obtener marcas de la compañía
         await this.fetchCompanyBrands();
       } catch (error) {
-        console.error('Error al cargar datos de la compañía:', error);
-        
-        // Verificar si $toast está disponible antes de usarlo
-        if (this.$toast) {
-          this.$toast.error('Error al cargar los datos de la compañía');
-        } else {
-          console.error('Error al cargar los datos de la compañía');
-        }
+        this.handleError(error, 'Error al cargar datos de la compañía');
       } finally {
         this.loading = false;
       }
@@ -149,17 +234,49 @@ export default {
     
     openCompanyModal() {
       this.currentCompany = { ...this.company };
+      
+      // Reiniciar los archivos de imagen
+      this.companyImageFiles = {
+        imagenBanner: null,
+        imagenPerfil: null
+      };
+      
       this.showCompanyModal = true;
     },
     
     closeCompanyModal() {
+      // Liberar URLs temporales
+      if (this.companyImageFiles.imagenBanner) {
+        URL.revokeObjectURL(this.currentCompany.imagenBanner);
+      }
+      if (this.companyImageFiles.imagenPerfil) {
+        URL.revokeObjectURL(this.currentCompany.imagenPerfil);
+      }
       this.showCompanyModal = false;
     },
     
     async saveCompany() {
       try {
+        // Subir imágenes si se han seleccionado nuevas
+        if (this.companyImageFiles.imagenBanner || this.companyImageFiles.imagenPerfil) {
+          try {
+            const imageUrls = await this.uploadImages('company');
+            
+            // Actualizar URLs
+            if (imageUrls.imagenBannerUrl) {
+              this.currentCompany.imagenBanner = imageUrls.imagenBannerUrl;
+            }
+            if (imageUrls.imagenPerfilUrl) {
+              this.currentCompany.imagenPerfil = imageUrls.imagenPerfilUrl;
+            }
+          } catch {
+            // Error ya manejado en uploadImages
+            return;
+          }
+        }
+        
         // Actualizar compañía existente
-        await axios.put(`http://localhost:5000/api/companies/${this.currentUserCompanyId}`, this.currentCompany);
+        await axios.put(`${API_URL}/companies/${this.currentUserCompanyId}`, this.currentCompany);
         
         if (this.$toast) {
           this.$toast.success('Compañía actualizada con éxito');
@@ -171,14 +288,7 @@ export default {
         // Cerrar el modal
         this.closeCompanyModal();
       } catch (error) {
-        console.error('Error al guardar compañía:', error);
-        
-        const errorMessage = error.response?.data?.message || 'Error al guardar la compañía';
-        if (this.$toast) {
-          this.$toast.error(errorMessage);
-        } else {
-          console.error(errorMessage);
-        }
+        this.handleError(error, 'Error al guardar la compañía');
       }
     },
     
@@ -186,14 +296,10 @@ export default {
     async fetchCompanyProducts() {
       this.loadingProducts = true;
       try {
-        const response = await axios.get(`http://localhost:5000/api/products?compania_id=${this.currentUserCompanyId}`);
+        const response = await axios.get(`${API_URL}/products?compania_id=${this.currentUserCompanyId}`);
         this.companyProducts = response.data;
       } catch (error) {
-        console.error('Error al cargar productos:', error);
-        
-        if (this.$toast) {
-          this.$toast.error('Error al cargar los productos');
-        }
+        this.handleError(error, 'Error al cargar productos');
       } finally {
         this.loadingProducts = false;
       }
@@ -218,10 +324,18 @@ export default {
           marca_id: null
         };
       }
+      
+      // Reiniciar archivo de imagen
+      this.productImageFile = null;
+      
       this.showProductModal = true;
     },
     
     closeProductModal() {
+      // Liberar URL temporal si existe
+      if (this.productImageFile) {
+        URL.revokeObjectURL(this.currentProduct.imagen);
+      }
       this.showProductModal = false;
     },
     
@@ -230,9 +344,22 @@ export default {
         // Asegurar que el producto esté asociado a la compañía correcta
         this.currentProduct.compania_id = this.currentUserCompanyId;
         
+        // Subir imagen si se ha seleccionado una nueva
+        if (this.productImageFile) {
+          try {
+            const imageUrl = await this.uploadImages('product');
+            if (imageUrl.imagenUrl) {
+              this.currentProduct.imagen = imageUrl.imagenUrl;
+            }
+          } catch {
+            // Error ya manejado en uploadImages
+            return;
+          }
+        }
+        
         if (this.isEditModeProduct) {
           // Actualizar producto existente
-          await axios.put(`http://localhost:5000/api/products/${this.currentProduct._id}`, this.currentProduct);
+          await axios.put(`${API_URL}/products/${this.currentProduct._id}`, this.currentProduct);
           
           if (this.$toast) {
             this.$toast.success('Producto actualizado con éxito');
@@ -245,7 +372,7 @@ export default {
           }
         } else {
           // Crear nuevo producto
-          const response = await axios.post('http://localhost:5000/api/products', this.currentProduct);
+          const response = await axios.post(`${API_URL}/products`, this.currentProduct);
           
           if (this.$toast) {
             this.$toast.success('Producto creado con éxito');
@@ -258,14 +385,7 @@ export default {
         // Cerrar el modal
         this.closeProductModal();
       } catch (error) {
-        console.error('Error al guardar producto:', error);
-        
-        const errorMessage = error.response?.data?.message || 'Error al guardar el producto';
-        if (this.$toast) {
-          this.$toast.error(errorMessage);
-        } else {
-          console.error(errorMessage);
-        }
+        this.handleError(error, 'Error al guardar el producto');
       }
     },
     
@@ -279,14 +399,10 @@ export default {
     async fetchCompanyBrands() {
       this.loadingBrands = true;
       try {
-        const response = await axios.get(`http://localhost:5000/api/brands?compania=${this.currentUserCompanyId}`);
+        const response = await axios.get(`${API_URL}/brands?compania=${this.currentUserCompanyId}`);
         this.companyBrands = response.data;
       } catch (error) {
-        console.error('Error al cargar marcas:', error);
-        
-        if (this.$toast) {
-          this.$toast.error('Error al cargar las marcas');
-        }
+        this.handleError(error, 'Error al cargar marcas');
       } finally {
         this.loadingBrands = false;
       }
@@ -319,7 +435,7 @@ export default {
         
         if (this.isEditModeBrand) {
           // Actualizar marca existente
-          await axios.put(`http://localhost:5000/api/brands/${this.currentBrand._id}`, this.currentBrand);
+          await axios.put(`${API_URL}/brands/${this.currentBrand._id}`, this.currentBrand);
           
           if (this.$toast) {
             this.$toast.success('Marca actualizada con éxito');
@@ -332,7 +448,7 @@ export default {
           }
         } else {
           // Crear nueva marca
-          const response = await axios.post('http://localhost:5000/api/brands', this.currentBrand);
+          const response = await axios.post(`${API_URL}/brands`, this.currentBrand);
           
           if (this.$toast) {
             this.$toast.success('Marca creada con éxito');
@@ -345,14 +461,7 @@ export default {
         // Cerrar el modal
         this.closeBrandModal();
       } catch (error) {
-        console.error('Error al guardar marca:', error);
-        
-        const errorMessage = error.response?.data?.message || 'Error al guardar la marca';
-        if (this.$toast) {
-          this.$toast.error(errorMessage);
-        } else {
-          console.error(errorMessage);
-        }
+        this.handleError(error, 'Error al guardar la marca');
       }
     },
     
@@ -367,7 +476,7 @@ export default {
         if (this.deleteType === 'product') {
           // Eliminar producto
           console.log(`Intentando eliminar producto con ID: ${this.itemToDelete._id}`);
-          const response = await axios.delete(`http://localhost:5000/api/products/${this.itemToDelete._id}`);
+          const response = await axios.delete(`${API_URL}/products/${this.itemToDelete._id}`);
           console.log('Respuesta del servidor:', response.data);
 
           if (this.$toast) {
@@ -395,7 +504,7 @@ export default {
           }
 
           // Eliminar marca
-          const response = await axios.delete(`http://localhost:5000/api/brands/${this.itemToDelete._id}`);
+          const response = await axios.delete(`${API_URL}/brands/${this.itemToDelete._id}`);
           console.log('Respuesta del servidor:', response.data);
 
           if (this.$toast) {
@@ -411,32 +520,8 @@ export default {
         // Cerrar el modal de confirmación
         this.showDeleteModal = false;
       } catch (error) {
-        console.error('Error al eliminar:', error);
-
-        // Obtener mensaje de error específico del servidor si está disponible
-        let errorMessage = '';
-        let itemType = '';
-
-        if (this.deleteType === 'product') {
-          itemType = 'el producto';
-        } else if (this.deleteType === 'brand') {
-          itemType = 'la marca';
-        }
-
-        // Mostrar el mensaje detallado del error si está disponible
-        if (error.response && error.response.data) {
-          console.log('Detalles del error del servidor:', error.response.data);
-          errorMessage = error.response.data.message || error.response.data.error || `Error al eliminar ${itemType}`;
-        } else {
-          errorMessage = `Error al eliminar ${itemType}: ${error.message || 'Error desconocido'}`;
-        }
-
-        if (this.$toast) {
-          this.$toast.error(errorMessage);
-        } else {
-          console.error(errorMessage);
-        }
-
+        this.handleError(error, `Error al eliminar ${this.deleteType === 'product' ? 'el producto' : 'la marca'}`);
+        
         // Cerrar el modal después de mostrar el error
         this.showDeleteModal = false;
       }
@@ -623,23 +708,43 @@ export default {
           </div>
           
           <div class="form-group">
-            <label for="company-banner">URL de imagen de banner</label>
-            <input 
-              type="text" 
-              id="company-banner" 
-              v-model="currentCompany.imagenBanner" 
-              placeholder="https://ejemplo.com/imagen.jpg"
-            >
+            <label for="company-banner">Imagen de banner</label>
+            <div class="image-upload-container">
+              <div class="current-image" v-if="currentCompany.imagenBanner">
+                <img :src="currentCompany.imagenBanner" alt="Banner actual" class="image-preview">
+              </div>
+              <input 
+                type="file"
+                id="company-banner"
+                accept="image/*"
+                @change="handleImageChange($event, 'company', 'imagenBanner')"
+                class="file-input"
+              >
+              <label for="company-banner" class="file-input-label">
+                <i class="fas fa-upload"></i> 
+                {{ currentCompany.imagenBanner ? 'Cambiar imagen' : 'Subir imagen' }}
+              </label>
+            </div>
           </div>
           
           <div class="form-group">
-            <label for="company-profile">URL de imagen de perfil</label>
-            <input 
-              type="text" 
-              id="company-profile" 
-              v-model="currentCompany.imagenPerfil" 
-              placeholder="https://ejemplo.com/imagen.jpg"
-            >
+            <label for="company-profile">Imagen de perfil</label>
+            <div class="image-upload-container">
+              <div class="current-image" v-if="currentCompany.imagenPerfil">
+                <img :src="currentCompany.imagenPerfil" alt="Perfil actual" class="image-preview profile-image-preview">
+              </div>
+              <input 
+                type="file"
+                id="company-profile"
+                accept="image/*"
+                @change="handleImageChange($event, 'company', 'imagenPerfil')"
+                class="file-input"
+              >
+              <label for="company-profile" class="file-input-label">
+                <i class="fas fa-upload"></i> 
+                {{ currentCompany.imagenPerfil ? 'Cambiar imagen' : 'Subir imagen' }}
+              </label>
+            </div>
           </div>
           
           <div class="form-group">
@@ -724,27 +829,37 @@ export default {
           <div class="form-group">
             <label for="product-description">Descripción</label>
             <textarea 
-              id="product-description" 
+              iid="product-description" 
               v-model="currentProduct.descripcion" 
-              rows="4" 
-              placeholder="Descripción del producto"
+              placeholder="Descripción detallada del producto"
+              rows="3"
             ></textarea>
           </div>
           
           <div class="form-group">
-            <label for="product-image">URL de imagen</label>
-            <input 
-              type="text" 
-              id="product-image" 
-              v-model="currentProduct.imagen" 
-              placeholder="https://ejemplo.com/imagen.jpg"
-            >
+            <label for="product-image">Imagen del producto</label>
+            <div class="image-upload-container">
+              <div class="current-image" v-if="currentProduct.imagen">
+                <img :src="currentProduct.imagen" alt="Imagen actual" class="image-preview">
+              </div>
+              <input 
+                type="file"
+                id="product-image"
+                accept="image/*"
+                @change="handleImageChange($event, 'product', 'imagen')"
+                class="file-input"
+              >
+              <label for="product-image" class="file-input-label">
+                <i class="fas fa-upload"></i> 
+                {{ currentProduct.imagen ? 'Cambiar imagen' : 'Subir imagen' }}
+              </label>
+            </div>
           </div>
           
           <div class="modal-footer">
             <button class="btn-secondary" @click="closeProductModal">Cancelar</button>
             <button class="btn-primary" @click="saveProduct">
-              {{ isEditModeProduct ? 'Actualizar' : 'Crear' }}
+              {{ isEditModeProduct ? 'Actualizar Producto' : 'Crear Producto' }}
             </button>
           </div>
         </div>
@@ -753,7 +868,7 @@ export default {
     
     <!-- Modal de Marca -->
     <div class="modal" v-if="showBrandModal" @click.self="closeBrandModal">
-      <div class="modal-content modal-sm">
+      <div class="modal-content">
         <div class="modal-header">
           <h2>{{ isEditModeBrand ? 'Editar Marca' : 'Nueva Marca' }}</h2>
           <button class="close-button" @click="closeBrandModal">×</button>
@@ -772,100 +887,73 @@ export default {
           <div class="modal-footer">
             <button class="btn-secondary" @click="closeBrandModal">Cancelar</button>
             <button class="btn-primary" @click="saveBrand">
-              {{ isEditModeBrand ? 'Actualizar' : 'Crear' }}
+              {{ isEditModeBrand ? 'Actualizar Marca' : 'Crear Marca' }}
             </button>
           </div>
         </div>
       </div>
     </div>
     
-<!-- Modal de Confirmación para Eliminar -->
-<div class="modal" v-if="showDeleteModal" @click.self="showDeleteModal = false">
-  <div class="modal-content modal-sm">
-    <div class="modal-header">
-      <h2>Confirmar eliminación</h2>
-      <button class="close-button" @click="showDeleteModal = false">×</button>
-    </div>
-    <div class="modal-body">
-      <p>
-        ¿Está seguro de que desea eliminar 
-        <strong>
-          {{ 
-            deleteType === 'product' ? (itemToDelete ? itemToDelete.nombre : '') :
-            deleteType === 'brand' ? (itemToDelete ? itemToDelete.nombre : '') : ''
-          }}
-        </strong>?
-      </p>
-      <p class="warning-text" v-if="deleteType === 'brand'">
-        Esta acción podría afectar a los productos asociados a esta marca.
-      </p>
-      
-      <div class="modal-footer">
-        <button class="btn-secondary" @click="showDeleteModal = false">Cancelar</button>
-        <button class="btn-danger" @click="deleteItem">Eliminar</button>
+    <!-- Modal de Confirmación para Eliminar -->
+    <div class="modal" v-if="showDeleteModal" @click.self="showDeleteModal = false">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Confirmar Eliminación</h2>
+          <button class="close-button" @click="showDeleteModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <p>
+            ¿Estás seguro de que deseas eliminar 
+            {{ deleteType === 'product' ? 'el producto' : 'la marca' }}
+            <strong>{{ itemToDelete ? itemToDelete.nombre : '' }}</strong>?
+          </p>
+          <p v-if="deleteType === 'brand'">
+            <strong>Nota:</strong> Si la marca tiene productos asociados, no podrá ser eliminada. 
+            Deberá actualizar o eliminar los productos primero.
+          </p>
+          
+          <div class="modal-footer">
+            <button class="btn-secondary" @click="showDeleteModal = false">Cancelar</button>
+            <button class="btn-danger" @click="deleteItem">Eliminar</button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
     
     <AppFooter />
   </div>
 </template>
 
-<style>
-
-
-:root {
-  --color-primary: #8B5A2B;       /* Café principal */
-  --color-primary-light: #A67C52; /* Café más claro */
-  --color-primary-dark: #6A4419;  /* Café oscuro */
-  --color-accent: #D2B48C;        /* Beige tostado */
-  --color-accent-light: #F5EBD8;  /* Beige claro */
-  --color-danger: #AF4425;        /* Rojo terroso */
-  --color-white: #FFFFFF;
-  --color-gray-light: #F5F5F5;
-  --color-gray: #E0E0E0;
-  --color-gray-dark: #707070;
-  --color-text: #3C2A1E;          /* Texto principal */
-  --font-family: 'Poppins', 'Segoe UI', sans-serif;
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
-  --border-radius: 6px;
-  --transition: all 0.3s ease;
-}
-
-/* Contenedor principal */
+<style scoped>
+/* Estilos generales */
 .commerce-management {
-  max-width: 1280px;
+  max-width: 1200px;
   margin: 2rem auto;
-  padding: 0 1.5rem;
+  padding: 0 1rem;
 }
 
-/* Encabezado de página con logo y detalles de la compañía */
+/* Encabezado de página */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 2px solid var(--color-accent);
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e1e1e1;
 }
 
 .company-info {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
 }
 
 .company-logo {
   width: 80px;
   height: 80px;
+  margin-right: 1rem;
   border-radius: 50%;
   overflow: hidden;
-  background-color: var(--color-accent-light);
-  border: 2px solid var(--color-accent);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid #e1e1e1;
 }
 
 .company-logo img {
@@ -875,69 +963,67 @@ export default {
 }
 
 .company-details h1 {
-  color: var(--color-primary-dark);
-  font-weight: 600;
+  margin: 0;
   font-size: 1.8rem;
-  margin-bottom: 0.25rem;
+  color: #333;
 }
 
 .company-email {
-  color: var(--color-gray-dark);
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+  margin: 0.2rem 0;
+  color: #666;
 }
 
 .company-plan {
   display: inline-block;
-  padding: 0.3rem 0.8rem;
-  background-color: var(--color-accent);
-  color: var(--color-primary-dark);
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  background-color: #e9f5ff;
+  color: #0077cc;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
 }
 
-/* Sección de estadísticas */
+/* Estadísticas */
 .stats-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
 }
 
 .stat-card {
-  background-color: var(--color-white);
-  border-radius: var(--border-radius);
+  flex: 1;
+  background-color: #fff;
+  border-radius: 8px;
   padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
+  margin: 0 0.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   text-align: center;
-  transition: var(--transition);
-  border-bottom: 3px solid var(--color-primary);
 }
 
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-md);
+.stat-card:first-child {
+  margin-left: 0;
+}
+
+.stat-card:last-child {
+  margin-right: 0;
 }
 
 .stat-value {
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: var(--color-primary);
-  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #0077cc;
+  margin-bottom: 0.2rem;
 }
 
 .stat-label {
-  color: var(--color-gray-dark);
-  font-size: 1rem;
-  font-weight: 500;
+  color: #666;
+  font-size: 0.9rem;
 }
 
-/* Contenedores de secciones */
+/* Secciones */
 .section-container {
-  background-color: var(--color-white);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-md);
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
   overflow: hidden;
 }
@@ -946,160 +1032,43 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  background-color: var(--color-accent-light);
-  border-bottom: 1px solid var(--color-accent);
+  padding: 1rem 1.5rem;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #e1e1e1;
 }
 
 .section-header h2 {
-  color: var(--color-primary-dark);
-  font-size: 1.3rem;
-  font-weight: 600;
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
 }
 
-/* Botones */
-.btn-primary, .btn-secondary, .btn-danger {
-  padding: 0.6rem 1.2rem;
-  border-radius: var(--border-radius);
-  font-weight: 500;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: var(--transition);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border: none;
-}
-
-.btn-primary {
-  background-color: var(--color-primary);
-  color: var(--color-white);
-}
-
-.btn-primary:hover {
-  background-color: var(--color-primary-dark);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-secondary {
-  background-color: var(--color-gray);
-  color: var(--color-text);
-}
-
-.btn-secondary:hover {
-  background-color: var(--color-gray-dark);
-  color: var(--color-white);
-}
-
-.btn-danger {
-  background-color: var(--color-danger);
-  color: var(--color-white);
-}
-
-.btn-danger:hover {
-  background-color: #8B351E;
-}
-
-/* Botones de acción en tabla */
-.btn-action {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  transition: var(--transition);
-  color: var(--color-gray-dark);
-}
-
-.btn-action.view {
-  color: var(--color-primary);
-}
-
-.btn-action.edit {
-  color: var(--color-primary-light);
-}
-
-.btn-action.delete {
-  color: var(--color-danger);
-}
-
-.btn-action:hover {
-  background-color: var(--color-accent-light);
-  transform: translateY(-2px);
-}
-
-/* Tabla de datos */
+/* Tablas */
 .table-container {
-  width: 100%;
+  padding: 1rem;
   overflow-x: auto;
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+}
+
+.data-table th, 
+.data-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e1e1e1;
+  text-align: left;
 }
 
 .data-table th {
-  text-align: left;
-  padding: 1rem;
+  background-color: #f5f5f5;
   font-weight: 600;
-  background-color: var(--color-accent);
-  color: var(--color-text);
-  position: sticky;
-  top: 0;
+  color: #333;
 }
 
-.data-table td {
-  padding: 0.8rem 1rem;
-  border-bottom: 1px solid var(--color-gray);
-  vertical-align: middle;
-}
-
-.data-table tr:last-child td {
-  border-bottom: none;
-}
-
-.data-table tr:hover {
-  background-color: var(--color-accent-light);
-}
-
-.actions-column {
-  width: 120px;
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-}
-
-.loading-message, .empty-message {
-  text-align: center;
-  padding: 2.5rem;
-  color: var(--color-gray-dark);
-  font-style: italic;
-}
-
-.empty-message {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-}
-
-.loading-message i, .empty-message i {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  color: var(--color-primary-light);
-}
-
-/* Imagen del producto */
 .product-img-cell {
-  width: 60px;
+  width: 70px;
 }
 
 .product-thumbnail {
@@ -1107,10 +1076,95 @@ export default {
   height: 50px;
   object-fit: cover;
   border-radius: 4px;
-  border: 1px solid var(--color-gray);
 }
 
-/* Modal */
+.actions-column {
+  width: 100px;
+  text-align: right;
+}
+
+.empty-message,
+.loading-message {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.access-denied {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+/* Botones */
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background-color: #0077cc;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #0066b3;
+}
+
+.btn-secondary {
+  background-color: #e1e1e1;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background-color: #d1d1d1;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+.btn-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.btn-action.edit {
+  color: #0077cc;
+}
+
+.btn-action.delete {
+  color: #dc3545;
+}
+
+.btn-action:hover {
+  background-color: #f1f1f1;
+}
+
+/* Modales */
 .modal {
   position: fixed;
   top: 0;
@@ -1119,72 +1173,40 @@ export default {
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   z-index: 1000;
-  padding: 1rem;
 }
 
 .modal-content {
-  background-color: var(--color-white);
-  border-radius: var(--border-radius);
-  width: 100%;
-  max-width: 600px;
+  background: white;
+  border-radius: 8px;
+  width: 500px;
+  max-width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-  animation: modalFadeIn 0.3s;
-}
-
-.modal-sm {
-  max-width: 400px;
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.2rem 1.5rem;
-  border-bottom: 1px solid var(--color-gray);
-  background-color: var(--color-accent-light);
-  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e1e1e1;
 }
 
 .modal-header h2 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--color-primary-dark);
+  margin: 0;
+  font-size: 1.2rem;
 }
 
 .close-button {
-  background: transparent;
+  background: none;
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: var(--color-gray-dark);
-  transition: var(--transition);
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-.close-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: var(--color-danger);
+  color: #666;
 }
 
 .modal-body {
@@ -1194,177 +1216,132 @@ export default {
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1.5rem;
+  padding: 1rem 0 0;
+  gap: 0.5rem;
 }
 
 /* Formularios */
 .form-group {
-  margin-bottom: 1.2rem;
+  margin-bottom: 1rem;
 }
 
 .form-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
+  margin: 0 -0.5rem 1rem;
 }
 
 .form-group.half {
   flex: 1;
-  min-width: 150px;
+  padding: 0 0.5rem;
 }
 
 label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   font-weight: 500;
-  font-size: 0.9rem;
-  color: var(--color-primary-dark);
+  color: #333;
 }
 
-input, textarea, select {
+input[type="text"],
+input[type="email"],
+input[type="number"],
+select,
+textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--color-gray);
-  border-radius: var(--border-radius);
-  font-family: var(--font-family);
-  font-size: 0.9rem;
-  color: var(--color-text);
-  transition: var(--transition);
-  background-color: var(--color-white);
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
 }
 
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: var(--color-primary-light);
-  box-shadow: 0 0 0 3px rgba(166, 124, 82, 0.2);
+textarea {
+  resize: vertical;
+  min-height: 100px;
 }
 
-input[type="number"] {
-  -moz-appearance: textfield;
-}
-
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Notas y advertencias */
 .note {
   font-size: 0.85rem;
-  color: var(--color-gray-dark);
+  color: #666;
   font-style: italic;
 }
 
-.warning-text {
-  color: var(--color-danger);
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
-}
-
-/* Pantalla de carga y acceso denegado */
-.loading-container {
+/* Subida de imágenes */
+.image-upload-container {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  font-size: 1.1rem;
-  color: var(--color-primary-dark);
+  flex-wrap: wrap;
 }
 
-.loading-container i {
-  font-size: 2rem;
+.current-image {
+  margin-right: 1rem;
   margin-bottom: 1rem;
-  color: var(--color-primary);
 }
 
-.access-denied {
-  text-align: center;
-  padding: 3rem 1rem;
-  background-color: var(--color-white);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow-md);
-  margin: 2rem auto;
-  max-width: 600px;
+.image-preview {
+  max-width: 150px;
+  max-height: 150px;
+  border-radius: 4px;
+  border: 1px solid #e1e1e1;
 }
 
-.access-denied h2 {
-  color: var(--color-danger);
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
+.profile-image-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
-/* Responsividad */
-@media (max-width: 992px) {
-  .stats-section {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.file-input {
+  display: none;
 }
 
+.file-input-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: #f1f1f1;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: normal;
+  color: #333;
+}
+
+.file-input-label i {
+  margin-right: 0.5rem;
+}
+
+.file-input-label:hover {
+  background-color: #e1e1e1;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-  .commerce-management {
-    margin: 1.5rem auto;
-    padding: 0 1rem;
-  }
-
   .page-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
   }
   
-  .company-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+  .page-header button {
+    margin-top: 1rem;
+    align-self: flex-start;
   }
   
   .stats-section {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .section-header {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
   }
   
-  .section-header button {
-    width: 100%;
-  }
-  
-  .data-table {
-    font-size: 0.8rem;
-  }
-  
-  .data-table th, .data-table td {
-    padding: 0.75rem 0.5rem;
-  }
-  
-  .actions-column {
-    width: 90px;
-  }
-}
-
-@media (max-width: 576px) {
-  .stats-section {
-    grid-template-columns: 1fr;
+  .stat-card {
+    margin: 0 0 1rem 0;
   }
   
   .form-row {
     flex-direction: column;
-    gap: 0.5rem;
+    margin: 0 0 1rem;
   }
   
-  .company-details h1 {
-    font-size: 1.5rem;
-  }
-  
-  .modal-content {
-    max-height: 95vh;
+  .form-group.half {
+    padding: 0;
+    margin-bottom: 1rem;
   }
 }
 </style>
