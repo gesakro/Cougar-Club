@@ -111,6 +111,22 @@ const routes = [
       requiresAdmin: true // Solo usuarios Administrador podrán verla
     }
   },
+  {
+  path: '/orders',
+  name: 'Orders',
+  component: () => import('@/views/Orders.vue'),
+  meta: {
+    title: 'Mis Pedidos | Cougar Club'
+  }
+},
+{
+  path: '/profile',
+  name: 'MyProfile',
+  component: () => import('@/views/MyProfile.vue'),
+  meta: {
+    title: 'Mi Perfil | Cougar Club'
+  }
+},
   // Esta ruta catch-all DEBE SER la última
   {
     path: '/:pathMatch(.*)*',
