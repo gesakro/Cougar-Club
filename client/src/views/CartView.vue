@@ -119,6 +119,7 @@
 import AppFooter from '@/components/layout/AppFooter.vue';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import CartService from '@/services/CartService';
+import PurchaseService from '@/services/PurchaseService';
 
 export default {
   name: 'CartView',
@@ -164,16 +165,39 @@ export default {
       }
     },
     updateQuantity(item) {
-      // Asegurarse de que la cantidad sea al menos 1
       const quantity = Math.max(1, item.quantity)
       CartService.updateCartItemQuantity(item.id, quantity)
       this.loadCart()
     },
-    checkout() {
-      // Simulación de proceso de compra
-      alert('¡Gracias por tu compra!')
-      CartService.clearCart()
-      this.loadCart()
+    async checkout() {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        alert('Debes iniciar sesión para finalizar la compra');
+        return;
+      }
+
+      const purchaseData = {
+        usuario_id: userId,
+        productos: this.cart.map(item => ({
+          producto_id: item.id,
+          cantidad: item.quantity,
+          precioUnitario: item.price
+        })),
+        totalCompra: this.totalPrice,
+        fecha: new Date().toISOString(),
+        estado: 'completado',
+        envio: 0
+      };
+        console.log('👉 Enviando purchaseData:', JSON.stringify(purchaseData, null, 2));
+      try {
+        await PurchaseService.createPurchase(purchaseData);
+        alert('¡Gracias por tu compra!');
+        CartService.clearCart();
+        this.loadCart();
+      } catch (error) {
+        console.error('Error al guardar la compra:', error);
+        alert('Ocurrió un error al procesar tu compra. Intenta de nuevo.');
+      }
     },
     formatPrice(price) {
       return new Intl.NumberFormat('es-ES', { 
@@ -184,12 +208,9 @@ export default {
   },
   created() {
     this.loadCart()
-    
-    // Escuchar cambios en el carrito (por si se modifica desde otra página)
     window.addEventListener('cart-updated', this.loadCart)
   },
   beforeUnmount() {
-    // Eliminar el evento cuando se desmonta el componente
     window.removeEventListener('cart-updated', this.loadCart)
   }
 }

@@ -1,5 +1,7 @@
 // CartService.js
 const CART_KEY = 'cart_items';
+const ORDER_HISTORY_KEY = 'order_history';
+
 
 const CartService = {
   // Obtener el carrito desde localStorage
@@ -75,6 +77,31 @@ const CartService = {
     // Notificar cambios en el carrito
     this._notifyCartUpdated();
   },
+
+  finalizeOrder() {
+  const cart = this.getCart();
+  if (cart.length === 0) return false;
+
+  const history = JSON.parse(localStorage.getItem(ORDER_HISTORY_KEY)) || [];
+
+  const newOrder = {
+    id: Date.now(), // ID único
+    items: cart,
+    date: new Date().toISOString()
+  };
+
+  history.push(newOrder);
+  localStorage.setItem(ORDER_HISTORY_KEY, JSON.stringify(history));
+
+  this.clearCart(); // Esto también lanza _notifyCartUpdated()
+  return true;
+},
+
+getOrderHistory() {
+  return JSON.parse(localStorage.getItem(ORDER_HISTORY_KEY)) || [];
+},
+
+
   
   // Método privado para notificar a los componentes sobre los cambios en el carrito
   _notifyCartUpdated() {

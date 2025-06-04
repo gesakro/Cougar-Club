@@ -213,11 +213,13 @@ export default {
       const userRole = payload.user.rol || 'Usuario';
       const userName = payload.user.nombre || 'Usuario';
       const userEmail = payload.user.email || this.email;
+      const userId = payload.user.id; // 👈 aquí obtienes el ID
       
       // Guardar información adicional del usuario
       localStorage.setItem('userRole', userRole);
       localStorage.setItem('userName', userName);
       localStorage.setItem('userEmail', userEmail);
+      localStorage.setItem('userId', userId); // 👈 aquí lo guardas
       
       // Si el usuario es Gerente, guardar también su compania_id
       if (userRole === 'Gerente' && payload.user.compania_id) {
