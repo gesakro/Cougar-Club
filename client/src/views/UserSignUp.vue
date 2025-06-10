@@ -299,10 +299,9 @@ export default {
         const signupData = {
           email: this.email,
           password: this.password,
-          // El rol por defecto será "Usuario", como se maneja en el backend
+          nombre: this.perfil.nombre,
+          apellido: this.perfil.apellido,
           perfil: {
-            nombre: this.perfil.nombre,
-            apellido: this.perfil.apellido,
             telefono: this.perfil.telefono || '',
             direccion: this.perfil.direccion || '',
             preferencias: {
@@ -314,7 +313,7 @@ export default {
         console.log('Datos a enviar:', signupData);
 
         // Llamada a la API para registrar al usuario
-        const response = await axios.post('http://localhost:5000/api/auth/signup', signupData);
+        const response = await axios.post('http://localhost:5000/api/auth/register', signupData);
 
         // Si el registro es exitoso, guardar el token en localStorage
         if (response.data && response.data.token) {
