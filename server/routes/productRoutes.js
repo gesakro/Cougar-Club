@@ -19,4 +19,8 @@ router.get('/:id', productController.getProductById);
 router.put('/:id', verifyToken, authorizeRole('Administrador', 'Gerente'), productController.updateProduct);
 router.delete('/:id', verifyToken, authorizeRole('Administrador', 'Gerente'), productController.deleteProduct);
 
+// Rutas para gestión de stock
+router.post('/:productId/check-stock', productController.checkStock);
+router.post('/:productId/update-stock', verifyToken, productController.updateStock);
+
 module.exports = router;

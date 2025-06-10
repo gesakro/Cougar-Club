@@ -84,13 +84,48 @@
                 <span>{{ formatPrice(0) }}</span>
               </div>
               <div class="discount-code">
-                <input type="text" placeholder="¿Tienes un código de descuento?" class="discount-input">
-                <button class="apply-discount">Aplicar</button>
+                <div class="coupon-input-group">
+                  <input 
+                    type="text" 
+                    v-model="couponCode"
+                    placeholder="¿Tienes un código de descuento?" 
+                    class="discount-input"
+                    :disabled="isLoading"
+                  >
+                  <button 
+                    @click="applyCoupon" 
+                    class="apply-discount"
+                    :disabled="isLoading"
+                  >
+                    {{ isLoading ? 'Aplicando...' : 'Aplicar' }}
+                  </button>
+                </div>
+                <p v-if="couponError" class="coupon-error">{{ couponError }}</p>
+                <div v-if="appliedCoupon" class="applied-coupon">
+                  <span class="coupon-info">
+                    Cupón aplicado: {{ appliedCoupon.code }}
+                    ({{ appliedCoupon.type === 'percentage' ? appliedCoupon.value + '%' : formatPrice(appliedCoupon.value) }})
+                  </span>
+                  <button @click="removeCoupon" class="remove-coupon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
             <div class="summary-row total">
-              <span>Total</span>
+              <span>Subtotal</span>
               <span>{{ formatPrice(totalPrice) }}</span>
+            </div>
+            <div v-if="appliedCoupon" class="summary-row discount">
+              <span>Descuento</span>
+              <span>-{{ formatPrice(discountAmount) }}</span>
+            </div>
+            <div class="summary-row final-total">
+              <span>Total</span>
+              <span>{{ formatPrice(finalPrice) }}</span>
             </div>
             <button @click="checkout" class="checkout-btn">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -120,6 +155,7 @@ import AppFooter from '@/components/layout/AppFooter.vue';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import CartService from '@/services/CartService';
 import PurchaseService from '@/services/PurchaseService';
+import CouponService from '@/services/CouponService';
 
 export default {
   name: 'CartView',
@@ -129,7 +165,11 @@ export default {
   },
   data() {
     return {
-      cart: []
+      cart: [],
+      couponCode: '',
+      appliedCoupon: null,
+      couponError: null,
+      isLoading: false
     }
   },
   computed: {
@@ -138,6 +178,16 @@ export default {
     },
     totalItems() {
       return this.cart.reduce((acc, item) => acc + item.quantity, 0)
+    },
+    discountAmount() {
+      if (!this.appliedCoupon) return 0;
+      if (this.appliedCoupon.type === 'percentage') {
+        return (this.totalPrice * this.appliedCoupon.value) / 100;
+      }
+      return this.appliedCoupon.value;
+    },
+    finalPrice() {
+      return this.totalPrice - this.discountAmount;
     }
   },
   methods: {
@@ -169,6 +219,31 @@ export default {
       CartService.updateCartItemQuantity(item.id, quantity)
       this.loadCart()
     },
+    async applyCoupon() {
+      if (!this.couponCode.trim()) {
+        this.couponError = 'Por favor, ingresa un código de cupón';
+        return;
+      }
+
+      this.isLoading = true;
+      this.couponError = null;
+
+      try {
+        const coupon = await CouponService.validateCoupon(this.couponCode);
+        this.appliedCoupon = coupon;
+        this.couponError = null;
+      } catch (error) {
+        this.couponError = error.response?.data?.message || 'Cupón inválido o expirado';
+        this.appliedCoupon = null;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    removeCoupon() {
+      this.appliedCoupon = null;
+      this.couponCode = '';
+      this.couponError = null;
+    },
     async checkout() {
       const userId = localStorage.getItem('userId');
       if (!userId) {
@@ -183,19 +258,43 @@ export default {
           cantidad: item.quantity,
           precioUnitario: item.price
         })),
-        totalCompra: this.totalPrice,
+        totalCompra: this.finalPrice,
         fecha: new Date().toISOString(),
         estado: 'completado',
-        envio: 0
+        envio: 0,
+        cupon: this.appliedCoupon ? {
+          codigo: this.couponCode,
+          descuento: this.discountAmount
+        } : null
       };
-        console.log('👉 Enviando purchaseData:', JSON.stringify(purchaseData, null, 2));
+
       try {
+        // Actualizar stock para cada producto
+        for (const item of this.cart) {
+          const response = await fetch(`${process.env.VUE_APP_API_URL || 'http://localhost:5000/api'}/products/${item.id}/update-stock`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ quantity: item.quantity })
+          });
+
+          if (!response.ok) {
+            throw new Error('Error al actualizar el stock de los productos');
+          }
+        }
+
+        if (this.appliedCoupon) {
+          await CouponService.applyCoupon(this.couponCode, purchaseData);
+        }
         await PurchaseService.createPurchase(purchaseData);
         alert('¡Gracias por tu compra!');
         CartService.clearCart();
         this.loadCart();
+        this.removeCoupon();
       } catch (error) {
-        console.error('Error al guardar la compra:', error);
+        console.error('Error al procesar la compra:', error);
         alert('Ocurrió un error al procesar tu compra. Intenta de nuevo.');
       }
     },
@@ -574,43 +673,74 @@ export default {
   gap: 0.5rem;
 }
 
-.discount-input {
-  flex-grow: 1;
-  padding: 0.8rem 1rem;
-  border: 1px solid #eee;
-  border-radius: 8px;
+.coupon-input-group {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.coupon-error {
+  color: #dc3545;
   font-size: 0.9rem;
-  transition: border-color 0.3s;
+  margin-top: 0.5rem;
 }
 
-.discount-input:focus {
-  outline: none;
-  border-color: #b38b6d;
-}
-
-.apply-discount {
-  padding: 0.8rem 1.2rem;
-  background-color: #f8f0eb;
-  color: #b38b6d;
-  border: none;
+.applied-coupon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #e8f5e9;
+  padding: 0.8rem 1rem;
   border-radius: 8px;
-  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.coupon-info {
+  color: #2e7d32;
+  font-size: 0.9rem;
   font-weight: 500;
-  transition: background-color 0.3s;
 }
 
-.apply-discount:hover {
-  background-color: #f1e2d9;
+.remove-coupon {
+  background: none;
+  border: none;
+  color: #2e7d32;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
-.summary-row.total {
-  font-size: 1.3rem;
-  border-top: 1px solid #f0f0f0;
+.remove-coupon:hover {
+  background-color: rgba(46, 125, 50, 0.1);
+}
+
+.summary-row.discount {
+  color: #2e7d32;
+  font-weight: 500;
+}
+
+.summary-row.final-total {
+  font-size: 1.4rem;
+  border-top: 2px solid #f0f0f0;
   margin-top: 1rem;
   padding-top: 1rem;
-  margin-bottom: 1.5rem;
   color: #333;
   font-weight: 600;
+}
+
+.discount-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.apply-discount:disabled {
+  background-color: #e0e0e0;
+  color: #9e9e9e;
+  cursor: not-allowed;
 }
 
 .checkout-btn {

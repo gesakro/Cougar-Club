@@ -92,3 +92,62 @@ exports.getProductsByBrand = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Verificar stock disponible
+exports.checkStock = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { quantity } = req.body;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Producto no encontrado' });
+    }
+
+    if (product.stock < quantity) {
+      return res.status(400).json({ 
+        message: 'Stock insuficiente',
+        availableStock: product.stock
+      });
+    }
+
+    res.json({ 
+      message: 'Stock disponible',
+      availableStock: product.stock
+    });
+  } catch (error) {
+    console.error('Error al verificar stock:', error);
+    res.status(500).json({ message: 'Error al verificar stock' });
+  }
+};
+
+// Actualizar stock después de una compra
+exports.updateStock = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { quantity } = req.body;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Producto no encontrado' });
+    }
+
+    if (product.stock < quantity) {
+      return res.status(400).json({ 
+        message: 'Stock insuficiente',
+        availableStock: product.stock
+      });
+    }
+
+    product.stock -= quantity;
+    await product.save();
+
+    res.json({ 
+      message: 'Stock actualizado correctamente',
+      newStock: product.stock
+    });
+  } catch (error) {
+    console.error('Error al actualizar stock:', error);
+    res.status(500).json({ message: 'Error al actualizar stock' });
+  }
+};

@@ -1,264 +1,295 @@
 <template>
-  <div class="user-profile-view">
+  <div class="profile-page">
     <AppNavbar />
-
-    <main class="profile-container">
-      <div class="breadcrumb">
-        <button @click="goBack" class="breadcrumb-link">
-          <i class="fas fa-arrow-left"></i> Volver
-        </button>
-        <h1 class="page-title">Mi Perfil</h1>
-      </div>
-
-      <div v-if="loading" class="loading-container">
+    <div class="profile-container">
+      <!-- Loading State -->
+      <div v-if="isLoading" class="loading-state">
         <div class="loading-spinner"></div>
+        <p class="loading-text">Cargando tu perfil...</p>
       </div>
 
-      <div v-else-if="error" class="error-message">
-        <div class="placeholder-icon">
-          <i class="fas fa-exclamation-triangle"></i>
-        </div>
-        <h3>Error al cargar el perfil</h3>
+      <!-- Error State -->
+      <div v-else-if="error" class="error-state">
+        <div class="error-icon">⚠️</div>
+        <h3>Oops, algo salió mal</h3>
         <p>{{ error }}</p>
-        <button @click="fetchUserProfile" class="return-btn">Intentar nuevamente</button>
+        <button @click="loadUserData" class="retry-button">
+          <span class="button-icon">🔄</span>
+          Reintentar
+        </button>
       </div>
 
+      <!-- Main Content -->
       <div v-else class="profile-content">
-        <!-- SECCIÓN DE INFORMACIÓN PERSONAL -->
-        <div class="profile-section">
-          <div class="section-header">
-            <h2><i class="fas fa-user"></i> Información Personal</h2>
-            <button @click="toggleEditMode" class="edit-btn">
-              <i class="fas fa-edit"></i> {{ editMode ? 'Cancelar' : 'Editar' }}
-            </button>
-          </div>
-
-          <div class="profile-card">
-            <div class="profile-avatar">
-              <div class="avatar-circle">
-                <i class="fas fa-user-circle"></i>
+        <!-- Hero Section -->
+        <div class="profile-hero">
+          <div class="hero-background"></div>
+          <div class="hero-content">
+            <div class="avatar-section">
+              <div class="avatar-placeholder">
+                <span class="avatar-initial">{{ user?.nombre?.charAt(0)?.toUpperCase() || 'U' }}</span>
+              </div>
+              <div class="welcome-text">
+                <h1 class="user-name">¡Hola, {{ user?.nombre || 'Usuario' }}!</h1>
+                <p class="welcome-subtitle">Bienvenido a tu perfil personal</p>
               </div>
             </div>
+            
+            <!-- User Level Badge -->
+            <div class="level-section">
+              <div class="level-badge" :class="'level-' + userLevel">
+                <span class="level-icon">{{ getLevelIcon(userLevel) }}</span>
+                <span class="level-text">{{ getLevelName(userLevel) }}</span>
+              </div>
+              
+              <div v-if="nextLevelThreshold" class="progress-section">
+                <div class="progress-info">
+                  <span class="progress-label">Progreso al siguiente nivel</span>
+                  <span class="progress-percentage">{{ Math.round(progressToNextLevel) }}%</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" :style="{ width: progressToNextLevel + '%' }"></div>
+                </div>
+                <p class="progress-text">
+                  Solo {{ formatPrice(nextLevelThreshold - stats.totalGastado) }} más para alcanzar 
+                  <strong>{{ getLevelName(userLevel + 1) }}</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            <div class="profile-info">
-              <div class="info-grid">
-                <div class="info-item">
-                  <label>Nombre completo:</label>
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+          <!-- Personal Information Card -->
+          <div class="card personal-info-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span class="card-icon">👤</span>
+                Información Personal
+              </h2>
+              <p class="card-subtitle">Mantén actualizada tu información</p>
+            </div>
+            
+            <form @submit.prevent="updateProfile" class="info-form">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Nombre completo</label>
                   <input 
-                    v-if="editMode" 
-                    v-model="editableUser.nombre" 
+                    v-model="user.nombre" 
                     type="text" 
-                    class="edit-input"
-                  />
-                  <span v-else>{{ user.nombre || 'No especificado' }}</span>
+                    class="form-input"
+                    :disabled="isLoading"
+                    placeholder="Tu nombre completo"
+                  >
                 </div>
-
-                <div class="info-item">
-                  <label>Email:</label>
+                
+                <div class="form-group">
+                  <label class="form-label">Correo electrónico</label>
                   <input 
-                    v-if="editMode" 
-                    v-model="editableUser.email" 
+                    v-model="user.email" 
                     type="email" 
-                    class="edit-input"
-                  />
-                  <span v-else>{{ user.email || 'No especificado' }}</span>
+                    class="form-input"
+                    :disabled="isLoading"
+                    placeholder="tu@email.com"
+                  >
                 </div>
-
-                <div class="info-item">
-                  <label>Teléfono:</label>
+                
+                <div class="form-group">
+                  <label class="form-label">Teléfono</label>
                   <input 
-                    v-if="editMode" 
-                    v-model="editableUser.telefono" 
+                    v-model="user.telefono" 
                     type="tel" 
-                    class="edit-input"
-                  />
-                  <span v-else>{{ user.telefono || 'No especificado' }}</span>
+                    class="form-input"
+                    :disabled="isLoading"
+                    placeholder="+1 (555) 123-4567"
+                  >
                 </div>
-
-                <div class="info-item">
-                  <label>Dirección:</label>
-                  <textarea 
-                    v-if="editMode" 
-                    v-model="editableUser.direccion" 
-                    class="edit-textarea"
-                    rows="3"
-                  ></textarea>
-                  <span v-else>{{ user.direccion || 'No especificada' }}</span>
-                </div>
-
-                <div class="info-item">
-                  <label>Miembro desde:</label>
-                  <span>{{ formatDate(user.fechaRegistro) }}</span>
-                </div>
-
-                <div class="info-item">
-                  <label>Total gastado:</label>
-                  <span class="total-spent">{{ formatPrice(userStats.totalGastado) }}</span>
+                
+                <div class="form-group full-width">
+                  <label class="form-label">Dirección</label>
+                  <input 
+                    v-model="user.direccion" 
+                    type="text" 
+                    class="form-input"
+                    :disabled="isLoading"
+                    placeholder="Tu dirección completa"
+                  >
                 </div>
               </div>
-
-              <div v-if="editMode" class="edit-actions">
-                <button @click="saveProfile" class="save-btn" :disabled="saving">
-                  <span v-if="saving">Guardando...</span>
-                  <span v-else><i class="fas fa-save"></i> Guardar cambios</span>
-                </button>
-                <button @click="cancelEdit" class="cancel-btn">Cancelar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECCIÓN DE ESTADÍSTICAS -->
-        <div class="profile-section">
-          <div class="section-header">
-            <h2><i class="fas fa-chart-bar"></i> Estadísticas de Compras</h2>
+              
+              <button type="submit" class="save-button" :disabled="isLoading">
+                <span v-if="!isLoading" class="button-content">
+                  <span class="button-icon">💾</span>
+                  Guardar Cambios
+                </span>
+                <span v-else class="button-content">
+                  <div class="button-spinner"></div>
+                  Guardando...
+                </span>
+              </button>
+            </form>
           </div>
 
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-shopping-bag"></i>
-              </div>
-              <div class="stat-info">
-                <h3>{{ userStats.totalCompras }}</h3>
-                <p>Compras realizadas</p>
-              </div>
+          <!-- Statistics Card -->
+          <div class="card stats-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span class="card-icon">📊</span>
+                Tus Estadísticas
+              </h2>
+              <p class="card-subtitle">Resumen de tu actividad</p>
             </div>
-
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-euro-sign"></i>
-              </div>
-              <div class="stat-info">
-                <h3>{{ formatPrice(userStats.totalGastado) }}</h3>
-                <p>Total gastado</p>
-              </div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-gift"></i>
-              </div>
-              <div class="stat-info">
-                <h3>{{ availableCoupons.length }}</h3>
-                <p>Cupones disponibles</p>
-              </div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-star"></i>
-              </div>
-              <div class="stat-info">
-                <h3>{{ getUserLevel() }}</h3>
-                <p>Nivel de usuario</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECCIÓN DE CUPONES -->
-        <div class="profile-section">
-          <div class="section-header">
-            <h2><i class="fas fa-ticket-alt"></i> Mis Cupones</h2>
-            <div class="progress-info">
-              <span>Progreso hacia el próximo cupón: {{ formatPrice(userStats.totalGastado) }} / {{ formatPrice(getNextCouponThreshold()) }}</span>
-            </div>
-          </div>
-
-          <!-- Barra de progreso -->
-          <div class="progress-bar-container">
-            <div class="progress-bar">
-              <div class="progress-fill" :style="{ width: getProgressPercentage() + '%' }"></div>
-            </div>
-            <div class="progress-text">
-              {{ getProgressPercentage().toFixed(0) }}% completado
-            </div>
-          </div>
-
-          <!-- Cupones disponibles -->
-          <div v-if="availableCoupons.length > 0" class="coupons-section">
-            <h3>Cupones Disponibles</h3>
-            <div class="coupons-grid">
-              <div 
-                v-for="coupon in availableCoupons" 
-                :key="coupon.id" 
-                class="coupon-card available"
-              >
-                <div class="coupon-header">
-                  <div class="coupon-discount">{{ coupon.descuento }}% OFF</div>
-                  <div class="coupon-status">
-                    <i class="fas fa-check-circle"></i> Disponible
-                  </div>
+            
+            <div class="stats-container">
+              <div class="stat-item">
+                <div class="stat-icon purchases">🛍️</div>
+                <div class="stat-content">
+                  <div class="stat-value">{{ stats?.totalCompras || 0 }}</div>
+                  <div class="stat-label">Compras Realizadas</div>
                 </div>
-                <div class="coupon-body">
-                  <h4>{{ coupon.nombre }}</h4>
-                  <p>{{ coupon.descripcion }}</p>
-                  <div class="coupon-details">
-                    <span class="coupon-code">Código: {{ coupon.codigo }}</span>
-                    <span class="coupon-expiry">Válido hasta: {{ formatDate(coupon.fechaExpiracion) }}</span>
-                  </div>
+              </div>
+              
+              <div class="stat-item">
+                <div class="stat-icon spending">💰</div>
+                <div class="stat-content">
+                  <div class="stat-value">{{ formatPrice(stats?.totalGastado || 0) }}</div>
+                  <div class="stat-label">Total Gastado</div>
                 </div>
-                <div class="coupon-actions">
-                  <button @click="copyCouponCode(coupon.codigo)" class="use-coupon-btn">
-                    <i class="fas fa-copy"></i> Copiar código
-                  </button>
+              </div>
+              
+              <div class="stat-item">
+                <div class="stat-icon date">📅</div>
+                <div class="stat-content">
+                  <div class="stat-value">{{ formatDate(stats?.ultimaCompra) }}</div>
+                  <div class="stat-label">Última Compra</div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Cupones bloqueados -->
-          <div class="coupons-section">
-            <h3>Cupones por Desbloquear</h3>
-            <div class="coupons-grid">
-              <div 
-                v-for="coupon in lockedCoupons" 
-                :key="coupon.id" 
-                class="coupon-card locked"
-              >
-                <div class="coupon-header">
-                  <div class="coupon-discount">{{ coupon.descuento }}% OFF</div>
-                  <div class="coupon-status">
-                    <i class="fas fa-lock"></i> Bloqueado
-                  </div>
-                </div>
-                <div class="coupon-body">
-                  <h4>{{ coupon.nombre }}</h4>
-                  <p>{{ coupon.descripcion }}</p>
-                  <div class="coupon-requirement">
-                    <i class="fas fa-info-circle"></i>
-                    Requiere: {{ formatPrice(coupon.requisitoGasto) }} en compras
-                  </div>
-                  <div class="coupon-progress">
-                    Progreso: {{ formatPrice(userStats.totalGastado) }} / {{ formatPrice(coupon.requisitoGasto) }}
+          <!-- Coupons Card -->
+          <div class="card coupons-card">
+            <div class="card-header">
+              <h2 class="card-title">
+                <span class="card-icon">🎟️</span>
+                Mis Cupones
+              </h2>
+              <p class="card-subtitle">Descuentos disponibles y próximos</p>
+            </div>
+            
+            <div class="coupons-container">
+              <!-- Available Coupons -->
+              <div v-if="coupons.available?.length > 0" class="coupons-section">
+                <h3 class="section-title available-title">✅ Disponibles Ahora</h3>
+                <div class="coupons-list">
+                  <div 
+                    v-for="coupon in coupons.available" 
+                    :key="coupon._id" 
+                    class="coupon-item available"
+                    @click="showCoupon(coupon)"
+                  >
+                    <div class="coupon-header">
+                      <h4 class="coupon-name">{{ coupon.name }}</h4>
+                      <div class="coupon-value">
+                        {{ coupon.type === 'percentage' ? `${coupon.value}%` : formatPrice(coupon.value) }}
+                      </div>
+                    </div>
+                    <p class="coupon-description">{{ coupon.description }}</p>
+                    <div class="coupon-action">
+                      <span class="action-text">Toca para ver código</span>
+                      <span class="action-arrow">→</span>
+                    </div>
                   </div>
                 </div>
               </div>
+              
+              <!-- Locked Coupons -->
+              <div v-if="coupons.locked?.length > 0" class="coupons-section">
+                <h3 class="section-title locked-title">🔒 Próximos Descuentos</h3>
+                <div class="coupons-list">
+                  <div 
+                    v-for="coupon in coupons.locked" 
+                    :key="coupon._id" 
+                    class="coupon-item locked"
+                  >
+                    <div class="coupon-header">
+                      <h4 class="coupon-name">{{ coupon.name }}</h4>
+                      <div class="coupon-value locked-value">
+                        {{ coupon.type === 'percentage' ? `${coupon.value}%` : formatPrice(coupon.value) }}
+                      </div>
+                    </div>
+                    <p class="coupon-description">{{ coupon.description }}</p>
+                    <div class="unlock-info">
+                      <span class="unlock-text">
+                        Gasta {{ formatPrice(coupon.minPurchase - stats.totalGastado) }} más para desbloquear
+                      </span>
+                      <div class="unlock-progress">
+                        <div 
+                          class="unlock-fill" 
+                          :style="{ width: Math.min((stats.totalGastado / coupon.minPurchase) * 100, 100) + '%' }"
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- No Coupons State -->
+              <div v-if="(!coupons.available?.length && !coupons.locked?.length)" class="no-coupons">
+                <div class="no-coupons-icon">🎁</div>
+                <h3>¡Próximamente tendrás cupones!</h3>
+                <p>Sigue comprando para desbloquear descuentos exclusivos</p>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    </main>
-
-    <!-- Modal de confirmación para copiar código -->
-    <div v-if="showCopyModal" class="modal-overlay" @click="closeCopyModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>¡Código copiado!</h3>
-          <button @click="closeCopyModal" class="modal-close">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <p>El código del cupón <strong>{{ copiedCouponCode }}</strong> ha sido copiado al portapapeles.</p>
-          <p>Puedes pegarlo durante el proceso de checkout para aplicar el descuento.</p>
-        </div>
-        <div class="modal-footer">
-          <button @click="closeCopyModal" class="confirm-btn">Entendido</button>
         </div>
       </div>
     </div>
+
+    <!-- Coupon Modal -->
+    <transition name="modal">
+      <div v-if="showCouponModal" class="modal-overlay" @click="closeCouponModal">
+        <div class="modal-card" @click.stop>
+          <div class="modal-header">
+            <h3 class="modal-title">{{ selectedCoupon?.name }}</h3>
+            <button @click="closeCouponModal" class="modal-close">×</button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="coupon-showcase">
+              <div class="coupon-code-display">{{ selectedCoupon?.code }}</div>
+              <p class="coupon-instructions">Copia este código y úsalo en tu próxima compra</p>
+            </div>
+            
+            <div class="modal-actions">
+              <button @click="copyCouponCode(selectedCoupon.code)" class="copy-button">
+                <span class="button-icon">📋</span>
+                Copiar Código
+              </button>
+              <button @click="closeCouponModal" class="cancel-button">
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Toast Notifications -->
+    <transition name="toast">
+      <div v-if="successMessage" class="toast success-toast">
+        <span class="toast-icon">✅</span>
+        <span class="toast-message">{{ successMessage }}</span>
+      </div>
+    </transition>
+    
+    <transition name="toast">
+      <div v-if="error" class="toast error-toast">
+        <span class="toast-icon">❌</span>
+        <span class="toast-message">{{ error }}</span>
+      </div>
+    </transition>
 
     <AppFooter />
   </div>
@@ -267,455 +298,191 @@
 <script>
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
-import axios from 'axios';
-
-// Configuración mejorada del cliente axios
-const apiClient = axios.create({
-  baseURL: process.env.VUE_APP_API_URL || 'http://localhost:5000/api',
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 10000 // 10 segundos de timeout
-});
-
-// Interceptor para añadir el token a todas las peticiones
-apiClient.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('🔑 Token añadido a la petición:', config.url);
-    } else {
-      console.warn('⚠️ No se encontró token en localStorage');
-    }
-    return config;
-  },
-  error => {
-    console.error('❌ Error en interceptor de request:', error);
-    return Promise.reject(error);
-  }
-);
-
-// Interceptor para manejar respuestas y errores de autenticación
-apiClient.interceptors.response.use(
-  response => {
-    console.log('✅ Respuesta exitosa:', response.config.url);
-    return response;
-  },
-  error => {
-    console.error('❌ Error en respuesta:', error.response?.status, error.config?.url);
-    
-    if (error.response?.status === 401) {
-      console.error('🚫 Token inválido o expirado - Limpiando localStorage');
-      // Limpiar localStorage
-      localStorage.removeItem('token');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('userEmail');
-      
-      // Redirigir al login si no estamos ya ahí
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-    }
-    return Promise.reject(error);
-  }
-);
+import apiClient from '@/services/axiosConfig';
 
 export default {
-  name: 'UserProfile',
-  components: { AppNavbar, AppFooter },
+  name: 'MyProfile',
+  components: {
+    AppNavbar,
+    AppFooter
+  },
   data() {
     return {
-      user: {},
-      userStats: {
-        totalCompras: 0,
-        totalGastado: 0
-      },
-      editableUser: {},
-      loading: true,
+      user: null,
+      stats: null,
+      coupons: { available: [], locked: [] },
+      isLoading: true,
       error: null,
-      editMode: false,
-      saving: false,
-      showCopyModal: false,
-      copiedCouponCode: '',
-      availableCoupons: [],
-      lockedCoupons: [
-        {
-          id: 1,
-          nombre: 'Descuento Bronce',
-          codigo: 'BRONZE10',
-          descuento: 10,
-          descripcion: 'Descuento del 10% en tu próxima compra',
-          requisitoGasto: 500,
-          fechaExpiracion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 días
-        },
-        {
-          id: 2,
-          nombre: 'Descuento Plata',
-          codigo: 'SILVER15',
-          descuento: 15,
-          descripcion: 'Descuento del 15% en tu próxima compra',
-          requisitoGasto: 1000,
-          fechaExpiracion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        },
-        {
-          id: 3,
-          nombre: 'Descuento Oro',
-          codigo: 'GOLD20',
-          descuento: 20,
-          descripcion: 'Descuento del 20% en tu próxima compra',
-          requisitoGasto: 2000,
-          fechaExpiracion: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        },
-        {
-          id: 4,
-          nombre: 'Descuento Platino',
-          codigo: 'PLATINUM25',
-          descuento: 25,
-          descripcion: 'Descuento del 25% en tu próxima compra + envío gratis',
-          requisitoGasto: 5000,
-          fechaExpiracion: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000) // 60 días
-        }
-      ]
+      successMessage: null,
+      showCouponModal: false,
+      selectedCoupon: null
     };
   },
-  
   computed: {
-    unlockedCoupons() {
-      return this.lockedCoupons.filter(coupon => 
-        this.userStats.totalGastado >= coupon.requisitoGasto
-      );
+    userLevel() {
+      if (!this.stats) return 0;
+      const totalSpent = this.stats.totalGastado || 0;
+      if (totalSpent >= 1000) return 3;
+      if (totalSpent >= 500) return 2;
+      if (totalSpent >= 100) return 1;
+      return 0;
+    },
+    nextLevelThreshold() {
+      const currentLevel = this.userLevel;
+      if (currentLevel === 0) return 100;
+      if (currentLevel === 1) return 500;
+      if (currentLevel === 2) return 1000;
+      return null;
+    },
+    progressToNextLevel() {
+      if (!this.nextLevelThreshold || !this.stats) return 0;
+      const totalSpent = this.stats.totalGastado || 0;
+      let previousThreshold = 0;
+      if (this.userLevel === 1) previousThreshold = 100;
+      if (this.userLevel === 2) previousThreshold = 500;
+      
+      const progress = ((totalSpent - previousThreshold) / (this.nextLevelThreshold - previousThreshold)) * 100;
+      return Math.min(Math.max(progress, 0), 100);
     }
   },
-
   methods: {
-    // Verificar autenticación antes de hacer cualquier petición
-    checkAuthentication() {
-      const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
-      
-      console.log('🔍 Verificando autenticación...');
-      console.log('Token existe:', !!token);
-      console.log('UserId existe:', !!userId);
-      console.log('UserId valor:', userId);
-      
-      if (!token || !userId) {
-        console.warn('⚠️ Usuario no autenticado - Redirigiendo al login');
-        this.$router.push('/login');
-        return false;
-      }
-      
-      // Verificar si el token no ha expirado
-      try {
-        const tokenParts = token.split('.');
-        if (tokenParts.length !== 3) {
-          throw new Error('Token inválido');
-        }
-        
-        const payload = JSON.parse(atob(tokenParts[1]));
-        const currentTime = Math.floor(Date.now() / 1000);
-        
-        console.log('📋 Payload del token:', payload);
-        console.log('⏰ Token expira en:', new Date(payload.exp * 1000));
-        console.log('⏰ Tiempo actual:', new Date());
-        
-        if (payload.exp && payload.exp < currentTime) {
-          console.warn('⚠️ Token expirado');
-          this.clearAuthData();
-          this.$router.push('/login');
-          return false;
-        }
-      } catch (error) {
-        console.error('❌ Error al verificar token:', error);
-        this.clearAuthData();
-        this.$router.push('/login');
-        return false;
-      }
-      
-      console.log('✅ Autenticación válida');
-      return true;
+    getLevelName(level) {
+      const names = ['Nuevo', 'Bronce', 'Plata', 'Oro', 'Platino'];
+      return names[level] || 'Platino';
     },
-
-    // Limpiar datos de autenticación
-    clearAuthData() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('userEmail');
+    getLevelIcon(level) {
+      const icons = ['🌱', '🥉', '🥈', '🥇', '💎'];
+      return icons[level] || '💎';
     },
-
-    goBack() {
-      window.history.length > 1 ? this.$router.back() : this.$router.push('/');
-    },
-
-    async fetchUserProfile() {
-      console.log('🚀 Iniciando carga del perfil...');
-      
-      this.loading = true;
+    async loadUserData() {
+      this.isLoading = true;
       this.error = null;
-
-      // Verificar autenticación primero
-      if (!this.checkAuthentication()) {
-        return;
-      }
-
-      const userId = localStorage.getItem('userId');
-      console.log('👤 Cargando perfil para usuario:', userId);
-
       try {
-        // Obtener información del usuario
-        console.log('📡 Haciendo petición a:', `/users/${userId}`);
-        const userResponse = await apiClient.get(`/users/${userId}`);
-        this.user = userResponse.data;
-        console.log('✅ Usuario obtenido:', this.user);
+        const [profileResponse, statsResponse, couponsResponse] = await Promise.all([
+          apiClient.get('/users/profile'),
+          apiClient.get('/users/stats'),
+          apiClient.get('/users/coupons')
+        ]);
 
-        // Obtener estadísticas del usuario
-        await this.fetchUserStats(userId);
-
-        // Verificar cupones desbloqueados
-        this.updateAvailableCoupons();
-
-        console.log('✅ Perfil cargado completamente');
-
+        this.user = profileResponse.data;
+        this.stats = statsResponse.data;
+        this.coupons = couponsResponse.data;
       } catch (error) {
-        console.error('❌ Error fetching user profile:', error);
-        
-        if (error.response?.status === 401) {
-          this.error = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
-          setTimeout(() => {
-            this.$router.push('/login');
-          }, 2000);
-        } else if (error.response?.status === 404) {
-          this.error = 'Usuario no encontrado.';
-        } else if (error.code === 'ECONNABORTED') {
-          this.error = 'La petición tardó demasiado. Verifica tu conexión.';
-        } else {
-          this.error = 'Error al cargar la información del perfil. Inténtalo nuevamente.';
-        }
+        console.error('Error al cargar datos del usuario:', error);
+        this.error = error.response?.data?.message || 'No pudimos cargar tu información. Por favor, intenta de nuevo.';
       } finally {
-        this.loading = false;
+        this.isLoading = false;
       }
     },
-
-    async fetchUserStats(userId) {
-      console.log('📊 Obteniendo estadísticas para usuario:', userId);
+    async updateProfile() {
+      this.isLoading = true;
+      this.error = null;
+      this.successMessage = null;
       
       try {
-        const statsResponse = await apiClient.get(`/purchases/user/${userId}/stats`);
-        this.userStats = statsResponse.data;
-        console.log('✅ Estadísticas obtenidas:', this.userStats);
-      } catch (error) {
-        console.log('⚠️ Endpoint de stats no disponible, calculando desde compras...');
-        
-        // Si no existe el endpoint de stats, calcular desde las compras
-        try {
-          const purchasesResponse = await apiClient.get(`/purchases/user/${userId}`);
-          const purchases = purchasesResponse.data;
-          
-          this.userStats = {
-            totalCompras: purchases.length,
-            totalGastado: purchases.reduce((sum, purchase) => 
-              sum + (purchase.totalCompra || purchase.total || 0), 0)
-          };
-          
-          console.log('✅ Estadísticas calculadas:', this.userStats);
-        } catch (purchasesError) {
-          console.error('❌ Error fetching user stats:', purchasesError);
-          // Usar estadísticas por defecto si hay error
-          this.userStats = { totalCompras: 0, totalGastado: 0 };
-        }
-      }
-    },
+        const response = await apiClient.put('/users/profile', {
+          nombre: this.user.nombre,
+          email: this.user.email,
+          telefono: this.user.telefono,
+          direccion: this.user.direccion
+        });
 
-    updateAvailableCoupons() {
-      console.log('🎫 Actualizando cupones disponibles...');
-      
-      this.availableCoupons = this.lockedCoupons.filter(coupon => 
-        this.userStats.totalGastado >= coupon.requisitoGasto
-      );
-      this.lockedCoupons = this.lockedCoupons.filter(coupon => 
-        this.userStats.totalGastado < coupon.requisitoGasto
-      );
-      
-      console.log('✅ Cupones disponibles:', this.availableCoupons.length);
-      console.log('🔒 Cupones bloqueados:', this.lockedCoupons.length);
-    },
-
-    toggleEditMode() {
-      if (this.editMode) {
-        this.cancelEdit();
-      } else {
-        this.editMode = true;
-        this.editableUser = { ...this.user };
-      }
-    },
-
-    cancelEdit() {
-      this.editMode = false;
-      this.editableUser = {};
-    },
-
-    async saveProfile() {
-      console.log('💾 Guardando perfil...');
-      
-      this.saving = true;
-      try {
-        const response = await apiClient.put(`/users/${this.user._id}`, this.editableUser);
         this.user = response.data;
-        this.editMode = false;
+        this.successMessage = '¡Perfil actualizado correctamente!';
         
-        // Mostrar mensaje de éxito (si tienes sistema de toast)
-        if (this.$toast) {
-          this.$toast.success('Perfil actualizado correctamente');
-        } else {
-          alert('Perfil actualizado correctamente');
-        }
-        
-        console.log('✅ Perfil guardado exitosamente');
+        // Auto-hide success message
+        setTimeout(() => {
+          this.successMessage = null;
+        }, 3000);
       } catch (error) {
-        console.error('❌ Error saving profile:', error);
+        console.error('Error al actualizar perfil:', error);
+        this.error = error.response?.data?.message || 'No pudimos guardar los cambios. Intenta de nuevo.';
         
-        if (this.$toast) {
-          this.$toast.error('Error al actualizar el perfil');
-        } else {
-          alert('Error al actualizar el perfil');
-        }
+        // Auto-hide error message
+        setTimeout(() => {
+          this.error = null;
+        }, 5000);
       } finally {
-        this.saving = false;
+        this.isLoading = false;
       }
     },
-
+    showCoupon(coupon) {
+      this.selectedCoupon = coupon;
+      this.showCouponModal = true;
+    },
     async copyCouponCode(code) {
       try {
         await navigator.clipboard.writeText(code);
-        this.copiedCouponCode = code;
-        this.showCopyModal = true;
-        console.log('✅ Código copiado:', code);
-      } catch (error) {
-        // Fallback para navegadores que no soportan clipboard API
-        const textArea = document.createElement('textarea');
-        textArea.value = code;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
+        this.successMessage = '¡Código copiado al portapapeles!';
+        this.closeCouponModal();
         
-        this.copiedCouponCode = code;
-        this.showCopyModal = true;
-        console.log('✅ Código copiado (fallback):', code);
+        // Auto-hide success message
+        setTimeout(() => {
+          this.successMessage = null;
+        }, 3000);
+      } catch (error) {
+        console.error('Error al copiar código:', error);
+        this.error = 'No pudimos copiar el código. Inténtalo manualmente.';
+        
+        // Auto-hide error message
+        setTimeout(() => {
+          this.error = null;
+        }, 3000);
       }
     },
-
-    closeCopyModal() {
-      this.showCopyModal = false;
-      this.copiedCouponCode = '';
+    closeCouponModal() {
+      this.showCouponModal = false;
+      this.selectedCoupon = null;
     },
-
-    getNextCouponThreshold() {
-      const nextCoupon = this.lockedCoupons.find(coupon => 
-        this.userStats.totalGastado < coupon.requisitoGasto
-      );
-      return nextCoupon ? nextCoupon.requisitoGasto : 5000;
-    },
-
-    getProgressPercentage() {
-      const threshold = this.getNextCouponThreshold();
-      return Math.min((this.userStats.totalGastado / threshold) * 100, 100);
-    },
-
-    getUserLevel() {
-      const totalSpent = this.userStats.totalGastado;
-      if (totalSpent >= 5000) return 'Platino';
-      if (totalSpent >= 2000) return 'Oro';
-      if (totalSpent >= 1000) return 'Plata';
-      if (totalSpent >= 500) return 'Bronce';
-      return 'Nuevo';
-    },
-
     formatDate(date) {
       if (!date) return 'No disponible';
       return new Date(date).toLocaleDateString('es-ES', {
         year: 'numeric',
-        month: 'long',
+        month: 'short',
         day: 'numeric'
       });
     },
-
     formatPrice(price) {
+      if (!price && price !== 0) return 'N/A';
       return new Intl.NumberFormat('es-ES', {
         style: 'currency',
         currency: 'EUR'
-      }).format(price || 0);
+      }).format(price);
     }
   },
-
   created() {
-    console.log('🎯 Componente MyProfile creado');
-    // Verificar autenticación y cargar perfil
-    if (this.checkAuthentication()) {
-      this.fetchUserProfile();
-    }
+    this.loadUserData();
   }
 };
 </script>
 
 <style scoped>
-.user-profile-view {
+.profile-page {
   min-height: 100vh;
-  background-color: #f8f9fa;
+  background: linear-gradient(135deg, #f7f5f3, #f1ede8);
 }
 
 .profile-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 30px 20px;
 }
 
-.breadcrumb {
+/* Loading States */
+.loading-state {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 15px;
-  margin-bottom: 30px;
-}
-
-.breadcrumb-link {
-  background: none;
-  border: none;
-  color: #6c757d;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.breadcrumb-link:hover {
-  background-color: #e9ecef;
-}
-
-.page-title {
-  color: #333;
-  font-size: 28px;
-  font-weight: 600;
-  margin: 0;
-}
-
-.loading-container {
-  display: flex;
   justify-content: center;
-  align-items: center;
-  height: 200px;
+  min-height: 400px;
+  gap: 20px;
 }
 
 .loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e8e3dc;
+  border-top: 4px solid #b8a082;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -725,55 +492,419 @@ export default {
   100% { transform: rotate(360deg); }
 }
 
-.error-message {
+.loading-text {
+  color: #8b7355;
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Error States */
+.error-state {
   text-align: center;
-  padding: 40px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 60px 30px;
+  background: #faf9f7;
+  border-radius: 16px;
+  border: 2px solid #e8e3dc;
+  box-shadow: 0 4px 20px rgba(184, 160, 130, 0.1);
 }
 
-.placeholder-icon {
-  font-size: 48px;
-  color: #dc3545;
-  margin-bottom: 16px;
+.error-icon {
+  font-size: 60px;
+  margin-bottom: 20px;
 }
 
-.return-btn {
-  background: #007bff;
+.error-state h3 {
+  color: #8b7355;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 15px 0;
+}
+
+.error-state p {
+  color: #a0927b;
+  font-size: 16px;
+  margin: 0 0 30px 0;
+  line-height: 1.5;
+}
+
+.retry-button {
+  background: linear-gradient(135deg, #b8a082, #a08968);
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
+  padding: 14px 28px;
+  border-radius: 10px;
   cursor: pointer;
-  margin-top: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(184, 160, 130, 0.3);
 }
 
-.profile-content {
+.retry-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(184, 160, 130, 0.4);
+  background: linear-gradient(135deg, #a08968, #8b7355);
+}
+
+/* Hero Section */
+.profile-hero {
+  position: relative;
+  background: linear-gradient(135deg, #faf9f7, #f4f1eb);
+  border-radius: 20px;
+  padding: 40px;
+  margin-bottom: 40px;
+  box-shadow: 0 8px 32px rgba(184, 160, 130, 0.15);
+  border: 1px solid #e8e3dc;
+  overflow: hidden;
+}
+
+.hero-background {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(184, 160, 130, 0.1), transparent);
+  border-radius: 50%;
+  transform: translate(100px, -100px);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+.avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  margin-bottom: 35px;
+}
+
+.avatar-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #b8a082, #a08968);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 32px;
+  font-weight: 700;
+  box-shadow: 0 6px 20px rgba(184, 160, 130, 0.3);
+}
+
+.welcome-text h1 {
+  color: #5d4e37;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.welcome-subtitle {
+  color: #8b7355;
+  font-size: 16px;
+  margin: 0;
+  opacity: 0.9;
+}
+
+/* Level Section */
+.level-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  max-width: fit-content;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.level-0 { background: linear-gradient(135deg, #e8e3dc, #d4c7b5); color: #8b7355; }
+.level-1 { background: linear-gradient(135deg, #deb887, #cd853f); color: #5d4e37; }
+.level-2 { background: linear-gradient(135deg, #c0c0c0, #a8a8a8); color: #4a4a4a; }
+.level-3 { background: linear-gradient(135deg, #ffd700, #ffa500); color: #8b4513; }
+
+.progress-section {
+  background: rgba(255, 255, 255, 0.6);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e8e3dc;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.progress-label {
+  color: #8b7355;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.progress-percentage {
+  color: #b8a082;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.progress-track {
+  height: 8px;
+  background: #e8e3dc;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #b8a082, #a08968);
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.progress-text {
+  color: #8b7355;
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 30px;
+}
+
+/* Card Styles */
+.card {
+  background: #faf9f7;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 6px 25px rgba(184, 160, 130, 0.12);
+  border: 1px solid #e8e3dc;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(184, 160, 130, 0.2);
+}
+
+.card-header {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e8e3dc;
+}
+
+.card-title {
+  color: #5d4e37;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-icon {
+  font-size: 24px;
+}
+
+.card-subtitle {
+  color: #8b7355;
+  font-size: 14px;
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* Form Styles */
+.info-form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-label {
+  color: #8b7355;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-input {
+  padding: 12px 16px;
+  border: 2px solid #e8e3dc;
+  border-radius: 10px;
+  font-size: 16px;
+  background: #ffffff;
+  color: #5d4e37;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #b8a082;
+  box-shadow: 0 0 0 3px rgba(184, 160, 130, 0.1);
+}
+
+.form-input:disabled {
+  background: #f4f1eb;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.save-button {
+  background: linear-gradient(135deg, #b8a082, #a08968);
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 15px rgba(184, 160, 130, 0.3);
+}
+
+.save-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #a08968, #8b7355);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(184, 160, 130, 0.4);
+}
+
+.save-button:disabled {
+  background: #d4c7b5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.button-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Statistics Card */
+.stats-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #ffffff, #f7f5f3);
+  border-radius: 12px;
+  border: 1px solid #e8e3dc;
+  transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 15px rgba(184, 160, 130, 0.15);
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.stat-icon.purchases {
+  background: linear-gradient(135deg, #e8e3dc, #d4c7b5);
+}
+
+.stat-icon.spending {
+  background: linear-gradient(135deg, #b8a082, #a08968);
+  color: white;
+}
+
+.stat-icon.date {
+  background: linear-gradient(135deg, #deb887, #cd853f);
+  color: white;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #5d4e37;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  color: #8b7355;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Coupons Card */
+.coupons-container {
   display: flex;
   flex-direction: column;
   gap: 30px;
 }
 
-.profile-section {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.section-header {
+.coupons-section {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #f8f9fa;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.section-header h2 {
-  color: #333;
-  font-size: 22px;
+.section-title {
+  color: #5d4e37;
+  font-size: 18px;
   font-weight: 600;
   margin: 0;
   display: flex;
@@ -781,312 +912,410 @@ export default {
   gap: 10px;
 }
 
-.edit-btn {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background-color 0.2s;
+.available-title {
+  color: #2d5016;
 }
 
-.edit-btn:hover {
-  background: #0056b3;
+.locked-title {
+  color: #8b4513;
 }
 
-.profile-card {
-  display: flex;
-  gap: 30px;
-  align-items: flex-start;
-}
-
-.profile-avatar {
-  flex-shrink: 0;
-}
-
-.avatar-circle {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #007bff, #6610f2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 60px;
-}
-
-.profile-info {
-  flex: 1;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-.info-item {
+.coupons-list {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 15px;
 }
 
-.info-item label {
-  font-weight: 600;
-  color: #555;
-  font-size: 14px;
-}
-
-.info-item span {
-  color: #333;
-  font-size: 16px;
-}
-
-.total-spent {
-  font-weight: 700;
-  color: #28a745;
-  font-size: 18px;
-}
-
-.edit-input, .edit-textarea {
-  padding: 10px;
-  border: 2px solid #dee2e6;
-  border-radius: 6px;
-  font-size: 16px;
-  transition: border-color 0.2s;
-}
-
-.edit-input:focus, .edit-textarea:focus {
-  outline: none;
-  border-color: #007bff;
-}
-
-.edit-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.save-btn, .cancel-btn {
-  padding: 12px 20px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-}
-
-.save-btn {
-  background: #28a745;
-  color: white;
-}
-
-.save-btn:hover:not(:disabled) {
-  background: #218838;
-}
-
-.save-btn:disabled {
-  background: #cccccc;
-  cursor: not-allowed;
-}
-
-.cancel-btn {
-  background: #6c757d;
-  color: white;
-}
-
-.cancel-btn:hover {
-  background: #545b62;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-.stat-card {
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-  padding: 25px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  border: 1px solid #dee2e6;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: #007bff;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-
-.stat-info h3 {
-  margin: 0 0 5px 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #333;
-}
-
-.stat-info p {
-  margin: 0;
-  color: #6c757d;
-  font-size: 14px;
-}
-
-.progress-info {
-  font-size: 14px;
-  color: #6c757d;
-}
-
-.progress-bar-container {
-  margin: 20px 0;
-}
-
-.progress-bar {
-  height: 12px;
-  background: #e9ecef;
-  border-radius: 6px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #28a745, #20c997);
-  transition: width 0.3s ease;
-}
-
-.progress-text {
-  text-align: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-}
-
-.coupons-section {
-  margin-top: 30px;
-}
-
-.coupons-section h3 {
-  color: #333;
-  font-size: 20px;
-  margin-bottom: 20px;
-}
-
-.coupons-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 20px;
-}
-
-.coupon-card {
-  border: 2px solid #dee2e6;
-  border-radius: 12px;
+.coupon-item {
   padding: 20px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  border-radius: 12px;
+  border: 2px solid;
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
-.coupon-card.available {
-  background: linear-gradient(135deg, #d4edda, #c3e6cb);
-  border-color: #28a745;
+.coupon-item.available {
+  background: linear-gradient(135deg, #f0f8f0, #e8f5e8);
+  border-color: #90c695;
 }
 
-.coupon-card.locked {
-  background: linear-gradient(135deg, #f8d7da, #f1b0b7);
-  border-color: #dc3545;
+.coupon-item.available:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(144, 198, 149, 0.3);
+  border-color: #7bb77f;
+}
+
+.coupon-item.locked {
+  background: linear-gradient(135deg, #f8f4f0, #f5ede8);
+  border-color: #d4c7b5;
+  cursor: default;
   opacity: 0.8;
-}
-
-.coupon-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .coupon-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
-.coupon-discount {
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-}
-
-.coupon-status {
-  font-size: 14px;
+.coupon-name {
+  color: #5d4e37;
+  font-size: 16px;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  margin: 0;
 }
 
-.coupon-card.available .coupon-status {
-  color: #28a745;
+.coupon-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2d5016;
+  background: rgba(144, 198, 149, 0.2);
+  padding: 6px 12px;
+  border-radius: 8px;
 }
 
-.coupon-card.locked .coupon-status {
-  color: #dc3545;
+.locked-value {
+  color: #8b7355;
+  background: rgba(212, 199, 181, 0.3);
 }
 
-.coupon-body h4 {
-  margin: 0 0 10px 0;
-  color: #333;
-  font-size: 18px;
-}
-
-.coupon-body p {
+.coupon-description {
+  color: #8b7355;
+  font-size: 14px;
   margin: 0 0 15px 0;
-  color: #666;
   line-height: 1.4;
 }
 
-.coupon-details {
+.coupon-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #2d5016;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.action-arrow {
+  font-size: 18px;
+  transition: transform 0.3s ease;
+}
+
+.coupon-item.available:hover .action-arrow {
+  transform: translateX(5px);
+}
+
+.unlock-info {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 10px;
+}
+
+.unlock-text {
+  color: #8b7355;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.unlock-progress {
+  height: 6px;
+  background: #e8e3dc;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.unlock-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #b8a082, #a08968);
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+/* No Coupons State */
+.no-coupons {
+  text-align: center;
+  padding: 40px 20px;
+  color: #8b7355;
+}
+
+.no-coupons-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.no-coupons h3 {
+  color: #5d4e37;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.no-coupons p {
+  color: #8b7355;
   font-size: 14px;
-  color: #555;
+  margin: 0;
+  opacity: 0.8;
 }
 
-.coupon-code {
-  font-weight: 600;
-  font-family: 'Courier New', monospace;
-  background: rgba(0,0,0,0.1);
-  padding: 4px 8px;
-  border-radius: 4px;
-  display: inline-block;
-}
-
-.coupon-requirement {
-  color: #dc3545;
-  font-weight: 600;
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(93, 78, 55, 0.6);
   display: flex;
   align-items: center;
-  gap: 5px;
-  margin-top: 10px;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
 }
 
+.modal-card {
+  background: #faf9f7;
+  border-radius: 20px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(93, 78, 55, 0.3);
+  border: 1px solid #e8e3dc;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px 30px 20px;
+  border-bottom: 2px solid #e8e3dc;
+}
+
+.modal-title {
+  color: #5d4e37;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #8b7355;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: #e8e3dc;
+  color: #5d4e37;
+}
+
+.modal-body {
+  padding: 30px;
+}
+
+.coupon-showcase {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.coupon-code-display {
+  background: linear-gradient(135deg, #b8a082, #a08968);
+  color: white;
+  font-family: 'Courier New', monospace;
+  font-size: 24px;
+  font-weight: 700;
+  padding: 20px 30px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  letter-spacing: 2px;
+  box-shadow: 0 6px 20px rgba(184, 160, 130, 0.3);
+}
+
+.coupon-instructions {
+  color: #8b7355;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.copy-button {
+  background: linear-gradient(135deg, #2d5016, #4a7c2a);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(45, 80, 22, 0.3);
+}
+
+.copy-button:hover {
+  background: linear-gradient(135deg, #4a7c2a, #5d8c3a);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(45, 80, 22, 0.4);
+}
+
+.cancel-button {
+  background: #8b7355;
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-button:hover {
+  background: #a08968;
+  transform: translateY(-2px);
+}
+
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  z-index: 1100;
+  backdrop-filter: blur(10px);
+}
+
+.success-toast {
+  background: linear-gradient(135deg, rgba(45, 80, 22, 0.95), rgba(74, 124, 42, 0.95));
+  color: white;
+  border: 1px solid rgba(144, 198, 149, 0.3);
+}
+
+.error-toast {
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.95), rgba(160, 82, 45, 0.95));
+  color: white;
+  border: 1px solid rgba(222, 184, 135, 0.3);
+}
+
+.toast-icon {
+  font-size: 20px;
+}
+
+.toast-message {
+  font-size: 14px;
+}
+
+/* Transitions */
+.modal-enter-active, .modal-leave-active {
+  transition: all 0.3s ease;
+}
+
+.modal-enter-from, .modal-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.toast-enter-active, .toast-leave-active {
+  transition: all 0.4s ease;
+}
+
+.toast-enter-from, .toast-leave-to {
+  opacity: 0;
+  transform: translateX(100%) scale(0.8);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 20px 15px;
+  }
+  
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .profile-hero {
+    padding: 25px 20px;
+  }
+  
+  .avatar-section {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+  
+  .welcome-text h1 {
+    font-size: 24px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-card {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .modal-header, .modal-body {
+    padding: 20px;
+  }
+  
+  .coupon-code-display {
+    font-size: 18px;
+    padding: 15px 20px;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .toast {
+    top: 20px;
+    right: 20px;
+    left: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-hero {
+    padding: 20px 15px;
+  }
+  
+  .card {
+    padding: 20px;
+  }
+  
+  .stat-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+  }
+  
+  .coupon-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
 </style>

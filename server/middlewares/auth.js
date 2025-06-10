@@ -4,24 +4,59 @@ const Brand = require('../models/Brand'); // Import Brand model
 const Product = require('../models/Product'); // Import Product model
 
 exports.verifyToken = (req, res, next) => {
-  let token;
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    token = req.headers.authorization.split(' ')[1];
-  } else if (req.header('x-auth-token')) {
-    token = req.header('x-auth-token');
-  }
-
-  if (!token) {
-    return res.status(401).json({ msg: 'No token, authorization denied' });
-  }
-
   try {
+    console.log('Verificando token de autenticación...');
+    
+    // Obtener el token del header
+    const authHeader = req.headers.authorization;
+    console.log('Auth header:', authHeader);
+    
+    const token = authHeader?.split(' ')[1] || req.header('x-auth-token');
+    console.log('Token extraído:', token ? 'Presente' : 'No presente');
+
+    if (!token) {
+      console.error('No se proporcionó token de autenticación');
+      return res.status(401).json({ message: 'No se proporcionó token de autenticación' });
+    }
+
+    // Verificar el token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // Se espera que decoded.user contenga: id, email, rol y, en caso de Gerente, compania_id
-    req.user = decoded.user;
+    console.log('Token decodificado:', JSON.stringify(decoded, null, 2));
+    
+    if (!decoded || !decoded.user) {
+      console.error('Token inválido: no contiene información del usuario');
+      return res.status(401).json({ message: 'Token inválido' });
+    }
+
+    // Asegurarse de que el usuario tenga un ID válido
+    if (!decoded.user.id) {
+      console.error('Token inválido: no contiene ID de usuario');
+      return res.status(401).json({ message: 'Token inválido: ID de usuario no encontrado' });
+    }
+
+    // Añadir la información del usuario al request
+    req.user = {
+      id: decoded.user.id,
+      email: decoded.user.email,
+      rol: decoded.user.rol,
+      compania_id: decoded.user.compania_id
+    };
+    
+    console.log('Usuario autenticado:', req.user);
     next();
-  } catch (err) {
-    res.status(401).json({ msg: 'Token no válido' });
+  } catch (error) {
+    console.error('Error detallado en autenticación:', error);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expirado' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Token inválido' });
+    }
+    res.status(500).json({ 
+      message: 'Error en la autenticación',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 

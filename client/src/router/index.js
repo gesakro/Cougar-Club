@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import RequestPasswordReset from '@/views/RequestPasswordReset.vue'
+import ResetPassword from '@/views/ResetPassword.vue'
 
 const routes = [
   {
@@ -75,20 +77,11 @@ const routes = [
     props: true
   },
   {
-    path: '/recoverPassword',
-    name: 'RecoverPassword',
-    component: () => import('@/views/RecoverPassword.vue'),
-    meta: {
-      title: 'Recuperar contraseña | Cougar Club'
-    }
-  },
-  {
     path: '/gestionar-comercio',
     name: 'GestionarComercio',
     component: () => import('@/views/Admin/companyManagement.vue'),
     meta: {
       title: 'Gestionar Comercio | Cougar Club',
-      // Permitimos que tanto Administradores 
       allowedRoles: ['Administrador']
     }
   },
@@ -127,6 +120,24 @@ const routes = [
     title: 'Mi Perfil | Cougar Club'
   }
 },
+  {
+    path: '/request-password-reset',
+    name: 'RequestPasswordReset',
+    component: RequestPasswordReset,
+    meta: {
+      title: 'Recuperar contraseña | Cougar Club',
+      hideNavbar: true
+    }
+  },
+  {
+    path: '/reset-password/:token',
+    name: 'ResetPassword',
+    component: ResetPassword,
+    meta: {
+      title: 'Cambiar contraseña | Cougar Club',
+      hideNavbar: true
+    }
+  },
   // Esta ruta catch-all DEBE SER la última
   {
     path: '/:pathMatch(.*)*',
