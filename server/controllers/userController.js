@@ -142,31 +142,48 @@ exports.getUserProfile = async (req, res) => {
 exports.updateUserProfile = async (req, res) => {
   try {
     const { nombre, email, telefono, direccion } = req.body;
-    const user = await User.findById(req.user.id);
     
+    // Validar que el usuario existe
+    const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
     // Actualizar campos del perfil
-    user.perfil = {
-      nombre: nombre || user.perfil.nombre,
-      telefono: telefono || user.perfil.telefono,
-      direccion: direccion || user.perfil.direccion
-    };
-
-    if (email) {
-      user.email = email;
+    if (!user.perfil) {
+      user.perfil = {};
     }
 
-    await user.save();
+    // Actualizar campos solo si se proporcionan
+    if (nombre !== undefined) {
+      user.perfil.nombre = nombre;
+      user.nombre = nombre; // También actualizar el nombre principal
+    }
+    if (telefono !== undefined) user.perfil.telefono = telefono;
+    if (direccion !== undefined) user.perfil.direccion = direccion;
+    if (email !== undefined) user.email = email;
 
-    // Devolver el perfil actualizado
-    const updatedProfile = user.getProfile();
+    // Guardar los cambios sin validación estricta
+    await user.save({ validateBeforeSave: false });
+
+    // Preparar la respuesta
+    const updatedProfile = {
+      id: user._id,
+      email: user.email,
+      nombre: user.perfil?.nombre || user.nombre || '',
+      telefono: user.perfil?.telefono || '',
+      direccion: user.perfil?.direccion || '',
+      rol: user.rol,
+      compania_id: user.compania_id
+    };
+
     res.json(updatedProfile);
   } catch (error) {
     console.error('Error al actualizar perfil:', error);
-    res.status(500).json({ message: 'Error al actualizar el perfil del usuario' });
+    res.status(500).json({ 
+      message: 'Error al actualizar el perfil del usuario',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 

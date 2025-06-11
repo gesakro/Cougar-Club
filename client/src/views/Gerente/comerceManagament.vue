@@ -3,6 +3,7 @@ import axios from 'axios';
 import AuthService from '../../services/authService.js';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
+import PriceService from '@/services/PriceService';
 
 // API base URL - mejor práctica para mantenimiento
 const API_URL = 'http://localhost:5000/api';
@@ -127,7 +128,7 @@ export default {
     },
     
     formatPrice(price) {
-      return parseFloat(price).toFixed(2);
+      return PriceService.formatPrice(price);
     },
     
     // Método centralizado para manejo de errores
@@ -598,7 +599,7 @@ export default {
                   >
                 </td>
                 <td>{{ product.nombre }}</td>
-                <td>{{ formatPrice(product.precio) }} €</td>
+                <td>{{ formatPrice(product.precio) }} COP</td>
                 <td>{{ product.stock }}</td>
                 <td>{{ product.categoria }}</td>
                 <td class="actions-column">
@@ -779,7 +780,7 @@ export default {
           
           <div class="form-row">
             <div class="form-group half">
-              <label for="product-price">Precio (€)</label>
+              <label for="product-price">Precio (COP)</label>
               <input 
                 type="number" 
                 id="product-price" 

@@ -299,6 +299,7 @@
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
 import apiClient from '@/services/axiosConfig';
+import PriceService from '@/services/PriceService';
 
 export default {
   name: 'MyProfile',
@@ -358,17 +359,49 @@ export default {
       this.isLoading = true;
       this.error = null;
       try {
+        // Obtener datos actualizados del servidor
         const [profileResponse, statsResponse, couponsResponse] = await Promise.all([
           apiClient.get('/users/profile'),
           apiClient.get('/users/stats'),
           apiClient.get('/users/coupons')
         ]);
 
-        this.user = profileResponse.data;
-        this.stats = statsResponse.data;
-        this.coupons = couponsResponse.data;
+        // Actualizar con los datos del servidor
+        if (profileResponse.data) {
+          // Asegurarse de que todos los campos necesarios estén presentes
+          this.user = {
+            id: profileResponse.data.id,
+            nombre: profileResponse.data.nombre || '',
+            email: profileResponse.data.email || '',
+            telefono: profileResponse.data.telefono || '',
+            direccion: profileResponse.data.direccion || '',
+            rol: profileResponse.data.rol,
+            compania_id: profileResponse.data.compania_id
+          };
+          
+          // Guardar en localStorage solo si tenemos datos válidos
+          localStorage.setItem('userProfile', JSON.stringify(this.user));
+        }
+        
+        if (statsResponse.data) {
+          this.stats = statsResponse.data;
+        }
+        
+        if (couponsResponse.data) {
+          this.coupons = couponsResponse.data;
+        }
+
       } catch (error) {
         console.error('Error al cargar datos del usuario:', error);
+        // Intentar cargar datos del localStorage como respaldo
+        const savedProfile = localStorage.getItem('userProfile');
+        if (savedProfile) {
+          try {
+            this.user = JSON.parse(savedProfile);
+          } catch (e) {
+            console.error('Error al parsear datos guardados:', e);
+          }
+        }
         this.error = error.response?.data?.message || 'No pudimos cargar tu información. Por favor, intenta de nuevo.';
       } finally {
         this.isLoading = false;
@@ -380,15 +413,34 @@ export default {
       this.successMessage = null;
       
       try {
-        const response = await apiClient.put('/users/profile', {
-          nombre: this.user.nombre,
-          email: this.user.email,
-          telefono: this.user.telefono,
-          direccion: this.user.direccion
-        });
+        // Preparar los datos a enviar
+        const userData = {
+          nombre: this.user.nombre?.trim() || '',
+          email: this.user.email?.trim() || '',
+          telefono: this.user.telefono?.trim() || '',
+          direccion: this.user.direccion?.trim() || ''
+        };
 
-        this.user = response.data;
-        this.successMessage = '¡Perfil actualizado correctamente!';
+        // Enviar la actualización al backend
+        const response = await apiClient.put('/users/profile', userData);
+
+        // Actualizar el estado local con la respuesta del servidor
+        if (response.data) {
+          // Actualizar el objeto user con los nuevos datos
+          this.user = {
+            ...this.user,
+            nombre: response.data.nombre,
+            email: response.data.email,
+            telefono: response.data.telefono,
+            direccion: response.data.direccion
+          };
+
+          // Guardar en localStorage para persistencia
+          localStorage.setItem('userProfile', JSON.stringify(this.user));
+          this.successMessage = '¡Perfil actualizado correctamente!';
+        } else {
+          throw new Error('No se recibió respuesta del servidor');
+        }
         
         // Auto-hide success message
         setTimeout(() => {
@@ -396,7 +448,16 @@ export default {
         }, 3000);
       } catch (error) {
         console.error('Error al actualizar perfil:', error);
-        this.error = error.response?.data?.message || 'No pudimos guardar los cambios. Intenta de nuevo.';
+        // Manejar diferentes tipos de errores
+        if (error.response?.status === 500) {
+          this.error = 'Error en el servidor. Por favor, intenta más tarde.';
+        } else if (error.response?.data?.message) {
+          this.error = error.response.data.message;
+        } else if (error.message) {
+          this.error = error.message;
+        } else {
+          this.error = 'No pudimos guardar los cambios. Intenta de nuevo.';
+        }
         
         // Auto-hide error message
         setTimeout(() => {
@@ -444,10 +505,7 @@ export default {
     },
     formatPrice(price) {
       if (!price && price !== 0) return 'N/A';
-      return new Intl.NumberFormat('es-ES', {
-        style: 'currency',
-        currency: 'EUR'
-      }).format(price);
+      return PriceService.formatPrice(price);
     }
   },
   created() {

@@ -136,6 +136,7 @@
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
 import axios from 'axios';
+import PriceService from '@/services/PriceService';
 
 const apiClient = axios.create({
   baseURL: process.env.VUE_APP_API_URL || 'http://localhost:5000/api',
@@ -274,10 +275,7 @@ export default {
     },
     
     formatPrice(p) { 
-      return new Intl.NumberFormat('es-ES', {
-        style: 'currency',
-        currency: 'EUR'
-      }).format(p || 0); 
+      return PriceService.formatPrice(p || 0);
     },
     
     formatStatus(s) { 

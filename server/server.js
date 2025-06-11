@@ -37,6 +37,7 @@ const purchaseRoutes = require('./routes/purchaseRoutes');
 const purchaseDetailRoutes = require('./routes/purchaseDetailRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const couponRoutes = require('./routes/couponRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 // Rutas principales
 app.get('/', (req, res) => {
@@ -53,6 +54,7 @@ app.use('/api/purchases', purchaseRoutes);
 app.use('/api/purchase-details', purchaseDetailRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Middleware global de gestión de errores (opcional)
 app.use((err, req, res, next) => {

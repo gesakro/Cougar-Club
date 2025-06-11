@@ -16,18 +16,40 @@ const userSchema = new mongoose.Schema({
   },
   nombre: {
     type: String,
-    required: [true, 'El nombre es requerido'],
-    trim: true
+    trim: true,
+    default: ''
   },
   apellido: {
     type: String,
-    required: [true, 'El apellido es requerido'],
-    trim: true
+    trim: true,
+    default: ''
+  },
+  perfil: {
+    nombre: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    telefono: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    direccion: {
+      type: String,
+      trim: true,
+      default: ''
+    }
   },
   rol: {
     type: String,
     enum: ['Administrador', 'Gerente', 'Usuario'],
     default: 'Usuario'
+  },
+  compania_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
+    default: null
   },
   resetToken: {
     type: String,
@@ -44,12 +66,8 @@ const userSchema = new mongoose.Schema({
 // Método para comparar contraseñas
 userSchema.methods.comparePassword = async function(candidatePassword) {
   try {
-    console.log('Comparando contraseñas para usuario:', this.email);
-    const isMatch = await bcrypt.compare(candidatePassword, this.password);
-    console.log('Resultado de comparación:', isMatch);
-    return isMatch;
+    return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
-    console.error('Error al comparar contraseñas:', error);
     throw error;
   }
 };
@@ -59,13 +77,10 @@ userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   
   try {
-    console.log('Hasheando contraseña para usuario:', this.email);
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    console.log('Contraseña hasheada correctamente');
     next();
   } catch (error) {
-    console.error('Error al hashear contraseña:', error);
     next(error);
   }
 });
@@ -75,12 +90,9 @@ userSchema.pre('findOneAndUpdate', async function(next) {
   const update = this.getUpdate();
   if (update && update.$set && update.$set.password) {
     try {
-      console.log('Hasheando contraseña en actualización');
       const salt = await bcrypt.genSalt(10);
       update.$set.password = await bcrypt.hash(update.$set.password, salt);
-      console.log('Contraseña hasheada correctamente en actualización');
     } catch (error) {
-      console.error('Error al hashear contraseña en actualización:', error);
       return next(error);
     }
   }

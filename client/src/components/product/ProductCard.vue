@@ -34,6 +34,8 @@
 </template>
 
 <script>
+import PriceService from '@/services/PriceService';
+
 export default {
   name: 'ProductCard',
   props: {
@@ -62,10 +64,10 @@ export default {
   },
   computed: {
     formattedPrice() {
-      return this.product.price.toLocaleString()
+      return PriceService.formatPrice(this.product.price);
     },
     formattedOriginalPrice() {
-      return this.product.originalPrice?.toLocaleString() || ''
+      return this.product.originalPrice ? PriceService.formatPrice(this.product.originalPrice) : '';
     }
   },
   methods: {

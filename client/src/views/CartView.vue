@@ -147,6 +147,18 @@
       </main>
     </div>
     <AppFooter />
+    <BuyerForm
+      v-if="showBuyerForm"
+      @continue="onBuyerContinue"
+      @close="showBuyerForm=false"
+    />
+    <PaymentBrick
+      v-if="showPaymentBrick"
+      :amount="finalPrice"
+      :extraPayer="payerData"
+      @success="onPaymentSuccess"
+      @close="showPaymentBrick = false"
+    />
   </div>
 </template>
 
@@ -156,12 +168,17 @@ import AppNavbar from '@/components/layout/AppNavbar.vue';
 import CartService from '@/services/CartService';
 import PurchaseService from '@/services/PurchaseService';
 import CouponService from '@/services/CouponService';
+import PriceService from '@/services/PriceService';
+import PaymentBrick from '@/components/PaymentBrick.vue';
+import BuyerForm from '@/components/BuyerForm.vue';
 
 export default {
   name: 'CartView',
   components: {
     AppNavbar,
-    AppFooter
+    AppFooter,
+    PaymentBrick,
+    BuyerForm
   },
   data() {
     return {
@@ -169,7 +186,10 @@ export default {
       couponCode: '',
       appliedCoupon: null,
       couponError: null,
-      isLoading: false
+      isLoading: false,
+      showPaymentBrick: false,
+      showBuyerForm: false,
+      payerData: {}
     }
   },
   computed: {
@@ -244,13 +264,16 @@ export default {
       this.couponCode = '';
       this.couponError = null;
     },
-    async checkout() {
+    checkout() {
       const userId = localStorage.getItem('userId');
       if (!userId) {
         alert('Debes iniciar sesión para finalizar la compra');
         return;
       }
-
+      this.showBuyerForm = true;
+    },
+    async processPurchase() {
+      const userId = localStorage.getItem('userId');
       const purchaseData = {
         usuario_id: userId,
         productos: this.cart.map(item => ({
@@ -299,10 +322,16 @@ export default {
       }
     },
     formatPrice(price) {
-      return new Intl.NumberFormat('es-ES', { 
-        style: 'currency', 
-        currency: 'EUR' 
-      }).format(price)
+      return PriceService.formatPrice(price);
+    },
+    onPaymentSuccess() {
+      this.showPaymentBrick = false;
+      this.processPurchase();
+    },
+    onBuyerContinue(data) {
+      this.payerData = data;
+      this.showBuyerForm = false;
+      this.showPaymentBrick = true;
     }
   },
   created() {
@@ -670,19 +699,77 @@ export default {
 .discount-code {
   margin-top: 1.5rem;
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.8rem;
 }
 
 .coupon-input-group {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.8rem;
   width: 100%;
+}
+
+.discount-input {
+  flex-grow: 1;
+  padding: 0.8rem 1.2rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  color: #333;
+  background-color: #f9f9f9;
+  transition: all 0.3s ease;
+}
+
+.discount-input:focus {
+  outline: none;
+  border-color: #b38b6d;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(179, 139, 109, 0.1);
+}
+
+.discount-input::placeholder {
+  color: #999;
+}
+
+.discount-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.apply-discount {
+  padding: 0.8rem 1.5rem;
+  background-color: #b38b6d;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(179, 139, 109, 0.2);
+}
+
+.apply-discount:hover:not(:disabled) {
+  background-color: #9a735a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(179, 139, 109, 0.3);
+}
+
+.apply-discount:disabled {
+  background-color: #e0e0e0;
+  color: #9e9e9e;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .coupon-error {
   color: #dc3545;
   font-size: 0.9rem;
-  margin-top: 0.5rem;
+  margin-top: 0.3rem;
+  padding-left: 1.2rem;
+  font-weight: 500;
 }
 
 .applied-coupon {
@@ -690,14 +777,21 @@ export default {
   align-items: center;
   justify-content: space-between;
   background-color: #e8f5e9;
-  padding: 0.8rem 1rem;
-  border-radius: 8px;
-  margin-top: 1rem;
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
+  margin-top: 0.5rem;
+  border: 1px solid #c8e6c9;
+  transition: all 0.3s ease;
+}
+
+.applied-coupon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.1);
 }
 
 .coupon-info {
   color: #2e7d32;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 500;
 }
 
@@ -706,7 +800,7 @@ export default {
   border: none;
   color: #2e7d32;
   cursor: pointer;
-  padding: 0.2rem;
+  padding: 0.4rem;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -716,6 +810,12 @@ export default {
 
 .remove-coupon:hover {
   background-color: rgba(46, 125, 50, 0.1);
+  transform: scale(1.1);
+}
+
+.remove-coupon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .summary-row.discount {
@@ -730,17 +830,6 @@ export default {
   padding-top: 1rem;
   color: #333;
   font-weight: 600;
-}
-
-.discount-input:disabled {
-  background-color: #f5f5f5;
-  cursor: not-allowed;
-}
-
-.apply-discount:disabled {
-  background-color: #e0e0e0;
-  color: #9e9e9e;
-  cursor: not-allowed;
 }
 
 .checkout-btn {

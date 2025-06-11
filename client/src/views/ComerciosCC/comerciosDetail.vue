@@ -211,9 +211,8 @@
 
                 <div class="product-meta">
                   <div class="product-price">
-                    <span v-if="product.precioAnterior" class="old-price">${{ formatPrice(product.precioAnterior)
-                    }}</span>
-                    <span class="current-price">${{ formatPrice(product.precio) }}</span>
+                    <span v-if="product.precioAnterior" class="old-price">{{ formatPrice(product.precioAnterior) }}</span>
+                    <span class="current-price">{{ formatPrice(product.precio) }}</span>
                   </div>
 
                   <div class="product-stock" :class="getStockClass(product.stock)">
@@ -288,6 +287,7 @@ import axios from 'axios';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
 import CartService from '@/services/CartService';
+import PriceService from '@/services/PriceService';
 
 // Configuración base para axios
 const apiClient = axios.create({
@@ -466,7 +466,7 @@ export default {
     },
 
     formatPrice(price) {
-      return parseFloat(price).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+      return PriceService.formatPrice(price);
     },
 
     formatDate(dateString) {

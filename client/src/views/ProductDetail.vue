@@ -129,6 +129,7 @@ import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import ProductSection from '@/components/product/ProductSection.vue'
 import CartService from '@/services/CartService'
+import PriceService from '@/services/PriceService'
 import axios from 'axios';
 
 // Configuración base para axios (debe ser igual que en ComercioDetail)
@@ -273,10 +274,7 @@ mapApiProductToLocal(apiProduct) {
   };
 },
     formatPrice(price) {
-      return new Intl.NumberFormat('es-ES', { 
-        style: 'currency', 
-        currency: 'EUR' 
-      }).format(price)
+      return PriceService.formatPrice(price);
     },
     formatCategory(category) {
       const categories = {
