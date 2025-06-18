@@ -13,7 +13,7 @@ connectDB();
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:8080',
-  'https://cougar-club-cojsco-dm1f.vercel.app'  // Sin la barra al final
+  'https://cougar-club-cojsco-n21t.vercel.app'  // Sin la barra al final
 ];
 
 app.use(express.json());
