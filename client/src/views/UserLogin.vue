@@ -151,7 +151,7 @@
 <script>
 import AppFooter from '@/components/layout/AppFooter.vue';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
-import axios from 'axios';
+import api from '@/api/api';
 
 export default {
   name: 'UserLogin',
@@ -197,7 +197,7 @@ export default {
     console.log('Intentando iniciar sesión con:', this.email);
 
     // Llamada a la API para autenticar al usuario
-    const response = await axios.post('http://localhost:5000/api/auth/login', loginData);
+    const response = await api.post('/api/auth/login', loginData);
 
     // Si la autenticación es exitosa, guardar el token en localStorage
     if (response.data && response.data.token) {

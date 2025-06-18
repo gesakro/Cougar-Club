@@ -37,17 +37,24 @@ exports.createBrand = async (req, res) => {
 // Obtener todas las marcas con filtro por compañía
 exports.getBrands = async (req, res) => {
   try {
+    console.log('getBrands llamado con query:', req.query);
+    
     const { compania } = req.query;
     
     // Filtrar por compañía si se proporciona el parámetro
     const filter = {};
     if (compania) {
       filter.compania = compania;
+      console.log('Filtro aplicado por compañía:', compania);
     }
     
+    console.log('Filtro final:', filter);
+    
     const brands = await Brand.find(filter).populate('compania');
+    console.log('Marcas encontradas:', brands.length);
     res.json(brands);
   } catch (error) {
+    console.error('Error en getBrands:', error);
     res.status(500).json({ error: error.message });
   }
 };

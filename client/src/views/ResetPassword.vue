@@ -105,7 +105,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import api from '@/api/api';
 
 export default {
   name: 'ResetPassword',
@@ -141,7 +141,7 @@ export default {
 
       try {
         const token = this.$route.params.token;
-        await axios.post('http://localhost:5000/api/auth/reset-password', {
+        await api.post('/api/auth/reset-password', {
           token,
           password: this.password
         });

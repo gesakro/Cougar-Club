@@ -1,7 +1,5 @@
-import axios from 'axios';
-import router from '@/router'; // Ajusta la ruta a donde esté definida la instancia de tu router
-
-const API_URL = 'http://localhost:5000/api/auth';
+import api from '@/api/api';
+import router from '@/router';
 
 // Función auxiliar para decodificar el token JWT
 const decodeToken = (token) => {
@@ -16,7 +14,7 @@ const decodeToken = (token) => {
 };
 
 // Configurar interceptores de axios para agregar el token automáticamente
-axios.interceptors.request.use(
+api.interceptors.request.use(
   config => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -28,7 +26,7 @@ axios.interceptors.request.use(
 );
 
 // Interceptor de respuesta para manejar errores de autenticación
-axios.interceptors.response.use(
+api.interceptors.response.use(
   response => response,
   error => {
     if (error.response && error.response.status === 401) {
@@ -43,7 +41,7 @@ axios.interceptors.response.use(
 const AuthService = {
   // Iniciar sesión
   async login(credentials) {
-    const response = await axios.post(`${API_URL}/login`, credentials);
+    const response = await api.post('/api/auth/login', credentials);
     
     if (response.data.token) {
       // Guardar token en localStorage
@@ -98,7 +96,7 @@ const AuthService = {
   
   // Registrar un nuevo usuario
   async register(userData) {
-    return await axios.post(`${API_URL}/register`, userData);
+    return await api.post('/api/auth/register', userData);
   },
   
   // Obtener el usuario actual desde el token
@@ -107,7 +105,7 @@ const AuthService = {
     if (!token) return null;
     
     try {
-      const response = await axios.get(`${API_URL}/me`);
+      const response = await api.get('/api/auth/me');
       return response.data;
     } catch (error) {
       this.logout();

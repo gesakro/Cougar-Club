@@ -93,7 +93,7 @@
 </template>
 
 <script>
-import apiClient from '@/services/axiosConfig';
+import api from '@/api/api';
 
 export default {
   name: 'BuyerForm',
@@ -113,7 +113,7 @@ export default {
   async created() {
     try {
       // Obtener datos del perfil del usuario
-      const response = await apiClient.get('/users/profile');
+      const response = await api.get('/api/users/profile');
       const userProfile = response.data;
 
       // Rellenar el formulario con los datos del perfil

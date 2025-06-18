@@ -312,7 +312,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import api from '@/api/api';
 import AuthService from '../../services/authService.js';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
@@ -376,11 +376,11 @@ export default {
     async fetchData() {
       try {
         // Obtener compañías
-        const companyResponse = await axios.get('http://localhost:5000/api/companies');
+        const companyResponse = await api.get('/api/companies');
         this.companies = companyResponse.data;
         
         // Obtener usuarios (incluidos los gerentes)
-        const userResponse = await axios.get('http://localhost:5000/api/users');
+        const userResponse = await api.get('/api/users');
         this.users = userResponse.data;
         
         // Filtrar gerentes
@@ -475,11 +475,11 @@ export default {
         
         if (this.isEditing) {
           // Editar gerente existente
-          await axios.put(`http://localhost:5000/api/users/${this.currentItemId}`, userData);
+          await api.put(`/api/users/${this.currentItemId}`, userData);
           this.showAlert('Gerente actualizado con éxito', 'success');
         } else {
           // Crear nuevo gerente
-          await axios.post('http://localhost:5000/api/users', userData);
+          await api.post('/api/users', userData);
           this.showAlert('Gerente creado con éxito', 'success');
         }
         
@@ -534,11 +534,11 @@ export default {
         
         if (this.isEditing) {
           // Editar usuario existente
-          await axios.put(`http://localhost:5000/api/users/${this.currentItemId}`, userData);
+          await api.put(`/api/users/${this.currentItemId}`, userData);
           this.showAlert('Usuario actualizado con éxito', 'success');
         } else {
           // Crear nuevo usuario
-          await axios.post('http://localhost:5000/api/users', userData);
+          await api.post('/api/users', userData);
           this.showAlert('Usuario creado con éxito', 'success');
         }
         
@@ -564,19 +564,19 @@ export default {
         
         switch (this.deleteType) {
           case 'company':
-            endpoint = `http://localhost:5000/api/companies/${this.itemToDeleteId}`;
+            endpoint = `/api/companies/${this.itemToDeleteId}`;
             successMessage = 'Compañía eliminada con éxito';
             break;
           case 'manager':
           case 'user':
-            endpoint = `http://localhost:5000/api/users/${this.itemToDeleteId}`;
+            endpoint = `/api/users/${this.itemToDeleteId}`;
             successMessage = this.deleteType === 'manager' ? 'Gerente eliminado con éxito' : 'Usuario eliminado con éxito';
             break;
           default:
             throw new Error('Tipo de elemento desconocido');
         }
         
-        await axios.delete(endpoint);
+        await api.delete(endpoint);
         this.showAlert(successMessage, 'success');
         
         // Cerrar modal y actualizar datos

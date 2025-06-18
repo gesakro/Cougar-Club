@@ -77,7 +77,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import api from '@/api/api';
 
 export default {
   name: 'RequestPasswordReset',
@@ -96,7 +96,7 @@ export default {
       this.successMessage = '';
 
       try {
-        await axios.post('http://localhost:5000/api/auth/request-password-reset', {
+        await api.post('/api/auth/request-password-reset', {
           email: this.email
         });
 

@@ -1,7 +1,8 @@
 // CartService.js
+import api from '@/api/api';
+
 const CART_KEY = 'shopping_cart';
 const ORDER_HISTORY_KEY = 'order_history';
-
 
 const CartService = {
   // Obtener el carrito desde localStorage
@@ -20,17 +21,11 @@ const CartService = {
   async addToCart(product, quantity = 1) {
     try {
       // Verificar stock disponible
-      const response = await fetch(`${process.env.VUE_APP_API_URL || 'http://localhost:5000/api'}/products/${product.id}/check-stock`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ quantity })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'No hay suficiente stock disponible');
+      const stockResponse = await api.post(`/api/products/${product.id}/check-stock`, { quantity });
+      
+      // Verificar si la respuesta indica que hay stock suficiente
+      if (stockResponse.data.availableStock < quantity) {
+        throw new Error('No hay suficiente stock disponible');
       }
 
       const cart = this.getCart();
@@ -75,17 +70,11 @@ const CartService = {
   async updateCartItemQuantity(productId, quantity) {
     try {
       // Verificar stock disponible
-      const response = await fetch(`${process.env.VUE_APP_API_URL || 'http://localhost:5000/api'}/products/${productId}/check-stock`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ quantity })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'No hay suficiente stock disponible');
+      const stockResponse = await api.post(`/api/products/${productId}/check-stock`, { quantity });
+      
+      // Verificar si la respuesta indica que hay stock suficiente
+      if (stockResponse.data.availableStock < quantity) {
+        throw new Error('No hay suficiente stock disponible');
       }
 
       const cart = this.getCart();
@@ -109,30 +98,28 @@ const CartService = {
   },
 
   finalizeOrder() {
-  const cart = this.getCart();
-  if (cart.length === 0) return false;
+    const cart = this.getCart();
+    if (cart.length === 0) return false;
 
-  const history = JSON.parse(localStorage.getItem(ORDER_HISTORY_KEY)) || [];
+    const history = JSON.parse(localStorage.getItem(ORDER_HISTORY_KEY)) || [];
 
-  const newOrder = {
-    id: Date.now(), // ID único
-    items: cart,
-    date: new Date().toISOString()
-  };
+    const newOrder = {
+      id: Date.now(), // ID único
+      items: cart,
+      date: new Date().toISOString()
+    };
 
-  history.push(newOrder);
-  localStorage.setItem(ORDER_HISTORY_KEY, JSON.stringify(history));
+    history.push(newOrder);
+    localStorage.setItem(ORDER_HISTORY_KEY, JSON.stringify(history));
 
-  this.clearCart(); // Esto también lanza _notifyCartUpdated()
-  return true;
-},
+    this.clearCart(); // Esto también lanza _notifyCartUpdated()
+    return true;
+  },
 
-getOrderHistory() {
-  return JSON.parse(localStorage.getItem(ORDER_HISTORY_KEY)) || [];
-},
+  getOrderHistory() {
+    return JSON.parse(localStorage.getItem(ORDER_HISTORY_KEY)) || [];
+  },
 
-
-  
   // Método privado para notificar a los componentes sobre los cambios en el carrito
   _notifyCartUpdated() {
     // Emitir un evento personalizado para notificar a los componentes

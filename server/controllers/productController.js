@@ -43,20 +43,27 @@ exports.createProduct = async (req, res) => {
 // Obtener todos los productos (con filtrado por compañía)
 exports.getProducts = async (req, res) => {
   try {
+    console.log('getProducts llamado con query:', req.query);
+    
     const { page = 1, limit = 10, compania_id } = req.query;
     
     // Construir filtro basado en los parámetros de consulta
     const filter = {};
     if (compania_id) {
       filter.compania_id = compania_id;
+      console.log('Filtro aplicado por compañía:', compania_id);
     }
+    
+    console.log('Filtro final:', filter);
     
     const products = await Product.find(filter)
       .skip((page - 1) * limit)
       .limit(Number(limit));
       
+    console.log('Productos encontrados:', products.length);
     res.json(products);
   } catch (error) {
+    console.error('Error en getProducts:', error);
     res.status(500).json({ error: error.message });
   }
 };

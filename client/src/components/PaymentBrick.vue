@@ -25,6 +25,8 @@
 </template>
 
 <script>
+import api from '@/api/api';
+
 export default {
   name: 'PaymentBrick',
   props: {
@@ -119,18 +121,12 @@ export default {
             try {
               const pureData = formData.formData || formData;
               console.log('Pure data to backend:', pureData);
-              const response = await fetch(`${process.env.VUE_APP_API_URL || 'http://localhost:5000/api'}/payments/create`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  ...pureData,
-                  amount: this.amount
-                })
+              const response = await api.post('/api/payments/create', {
+                ...pureData,
+                amount: this.amount
               });
 
-              const result = await response.json();
+              const result = response.data;
               const paymentMethod = result.payment?.payment_method_id || result.payment_method_id || pureData.payment_method_id;
               if (result.status === 'approved') {
                 this.$emit('success');

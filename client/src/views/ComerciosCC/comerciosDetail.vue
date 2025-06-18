@@ -287,28 +287,11 @@
 </template>
 
 <script>
-import axios from 'axios';
+import api from '@/api/api';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
 import CartService from '@/services/CartService';
 import PriceService from '@/services/PriceService';
-
-// Configuración base para axios
-const apiClient = axios.create({
-  baseURL: process.env.VUE_APP_API_URL || 'http://localhost:5000/api',
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
-
-// Agregar interceptor para incluir el token de autenticación si está disponible
-apiClient.interceptors.request.use(config => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 export default {
   name: 'ComercioDetail',
@@ -429,7 +412,7 @@ export default {
         const companyId = this.$route.params.id;
 
         // Obtener la compañía por su ID
-        const companyResponse = await apiClient.get(`/companies/${companyId}`);
+        const companyResponse = await api.get(`/api/companies/${companyId}`);
         this.company = companyResponse.data;
 
         // Cargar marcas y productos relacionados con la compañía
@@ -452,7 +435,7 @@ export default {
 
     async fetchBrands(companyId) {
       try {
-        const brandResponse = await apiClient.get(`/brands`, {
+        const brandResponse = await api.get(`/api/brands`, {
           params: { compania: companyId }
         });
         this.brands = brandResponse.data;
@@ -464,7 +447,7 @@ export default {
 
     async fetchProducts(companyId) {
       try {
-        const productResponse = await apiClient.get(`/products`, {
+        const productResponse = await api.get(`/api/products`, {
           params: { compania_id: companyId }
         });
         this.products = productResponse.data;
@@ -520,7 +503,7 @@ export default {
 
     async fetchAllCompanies() {
       try {
-        const response = await apiClient.get('/companies');
+        const response = await api.get('/api/companies');
         this.allCompanies = response.data.filter(c => c._id !== this.company._id);
         // Randomizar y tomar 4
         let related = [...this.allCompanies];

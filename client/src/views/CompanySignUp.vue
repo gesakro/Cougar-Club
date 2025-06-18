@@ -127,7 +127,7 @@
 <script>
 import AppFooter from '@/components/layout/AppFooter.vue';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
-import axios from 'axios';
+import api from '@/api/api';
 
 
 export default {
@@ -197,7 +197,7 @@ export default {
           password: this.password,
           nombre: this.perfil.nombre
         };
-        const response = await axios.post('http://localhost:5000/api/auth/register-manager', signupData);
+        const response = await api.post('/api/auth/register-manager', signupData);
         if (response.data && response.data.token) {
           // Guardar token en localStorage
           localStorage.setItem('token', response.data.token);

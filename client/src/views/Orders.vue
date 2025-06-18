@@ -135,19 +135,8 @@
 <script>
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
-import axios from 'axios';
+import api from '@/api/api';
 import PriceService from '@/services/PriceService';
-
-const apiClient = axios.create({
-  baseURL: process.env.VUE_APP_API_URL || 'http://localhost:5000/api',
-  headers: { 'Content-Type': 'application/json' }
-});
-
-apiClient.interceptors.request.use(config => {
-  const token = localStorage.getItem('token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
 
 export default {
   name: 'OrdersHistory',
@@ -179,7 +168,7 @@ export default {
       }
       
       try {
-        const response = await apiClient.get(`/purchases/user/${userId}`, {
+        const response = await api.get(`/api/purchases/user/${userId}`, {
           params: {
             populate: 'productos.producto_id'
           }
@@ -210,7 +199,7 @@ export default {
       this.deletingPurchase = this.purchaseToDelete;
       
       try {
-        await apiClient.delete(`/purchases/${this.purchaseToDelete}`);
+        await api.delete(`/api/purchases/${this.purchaseToDelete}`);
         
         // Remover la compra del array local
         this.purchases = this.purchases.filter(p => p._id !== this.purchaseToDelete);

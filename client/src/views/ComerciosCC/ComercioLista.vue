@@ -112,7 +112,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import api from '@/api/api';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
 
@@ -174,7 +174,7 @@ export default {
       this.error = null;
       
       try {
-        const response = await axios.get('http://localhost:5000/api/companies');
+        const response = await api.get('/api/companies');
         this.companies = response.data.map(company => ({
           ...company,
           descripcion: company.descripcion || 'Descubre este increíble establecimiento y todo lo que tiene para ofrecer.'

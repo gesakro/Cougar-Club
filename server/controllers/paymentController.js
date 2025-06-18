@@ -13,7 +13,6 @@ mercadopago.configure({
 exports.createPayment = async (req, res) => {
   try {
     console.log('Pago recibido:', req.body);
-
     // Si viene anidado dentro de formData, tomar ese objeto
     const source = req.body.formData ? req.body.formData : req.body;
 

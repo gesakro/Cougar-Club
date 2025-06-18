@@ -28,17 +28,29 @@ exports.getPurchases = async (req, res) => {
 exports.getPurchasesByUser = async (req, res) => {
   try {
     const userId = req.params.userId;
+    console.log('🔍 Buscando compras para usuario:', userId);
+    
     if (!userId) {
       return res.status(400).json({ error: 'Se requiere un ID de usuario' });
     }
 
+    // Verificar si el usuario existe
+    const User = require('../models/User');
+    const userExists = await User.findById(userId);
+    if (!userExists) {
+      console.log('❌ Usuario no encontrado:', userId);
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
     // Primero obtenemos los datos SIN populate
     const sinPopulate = await Purchase.find({ usuario_id: userId });
+    console.log('📦 Compras SIN populate encontradas:', sinPopulate.length);
     console.log('📦 Datos SIN populate:', JSON.stringify(sinPopulate, null, 2));
 
     // Ahora obtenemos los datos CON populate
     const purchases = await Purchase.find({ usuario_id: userId })
       .populate('productos.producto_id');
+    console.log('📦 Compras CON populate encontradas:', purchases.length);
     console.log('📦 Datos CON populate:', JSON.stringify(purchases, null, 2));
 
     res.status(200).json(purchases);

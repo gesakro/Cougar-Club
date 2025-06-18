@@ -1,14 +1,11 @@
 <script>
-import axios from 'axios';
+import api from '@/api/api';
 import AuthService from '../../services/authService.js';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
 import PriceService from '@/services/PriceService';
 import { useToast } from 'vue-toastification';
 import PaymentBrick from '@/components/PaymentBrick.vue';
-
-// API base URL - mejor práctica para mantenimiento
-const API_URL = 'http://localhost:5000/api';
 
 export default {
   name: 'CommerceManagement',
@@ -172,7 +169,7 @@ export default {
       this.loading = true;
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_URL}/companies/manager/company`, {
+        const response = await api.get('/api/companies/manager/company', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -283,7 +280,7 @@ export default {
             formData.append('imagenPerfil', this.companyImageFiles.imagenPerfil);
           }
           
-          const response = await axios.post(`${API_URL}/companies/upload-images`, formData, { headers });
+          const response = await api.post('/api/companies/upload-images', formData, { headers });
           
           return {
             imagenBannerUrl: response.data.imagenBannerUrl || this.currentCompany.imagenBanner,
@@ -297,7 +294,7 @@ export default {
           const formData = new FormData();
           formData.append('imagen', this.productImageFile);
           
-          const response = await axios.post(`${API_URL}/products/upload-image`, formData, { headers });
+          const response = await api.post('/api/products/upload-image', formData, { headers });
           
           return { 
             imagenUrl: response.data.imagenUrl || this.currentProduct.imagen 
@@ -316,7 +313,7 @@ export default {
       this.loading = true;
       try {
         // Obtener los datos de la compañía del gerente
-        const response = await axios.get(`${API_URL}/companies/${this.currentUserCompanyId}`);
+        const response = await api.get(`/api/companies/${this.currentUserCompanyId}`);
         this.company = response.data;
         
         // Obtener productos de la compañía
@@ -376,7 +373,7 @@ export default {
     async handlePaymentSuccess() {
       try {
         // 1. Crear la empresa sin imágenes
-        const response = await axios.post(`${API_URL}/companies/manager`, {
+        const response = await api.post('/api/companies/manager', {
           ...this.currentCompany,
           imagenBanner: '',
           imagenPerfil: '',
@@ -397,7 +394,7 @@ export default {
           if (this.companyImageFiles.imagenPerfil) {
             formData.append('imagenPerfil', this.companyImageFiles.imagenPerfil);
           }
-          const uploadRes = await axios.post(`${API_URL}/companies/upload-images`, formData, {
+          const uploadRes = await api.post('/api/companies/upload-images', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
               Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -408,7 +405,7 @@ export default {
         }
 
         // 3. Actualizar la empresa con las URLs de las imágenes
-        const updateRes = await axios.put(`${API_URL}/companies/${companyId}`, {
+        const updateRes = await api.put(`/api/companies/${companyId}`, {
           ...response.data.company,
           imagenBanner: imagenBannerUrl || response.data.company.imagenBanner,
           imagenPerfil: imagenPerfilUrl || response.data.company.imagenPerfil
@@ -478,7 +475,7 @@ export default {
           if (this.companyImageFiles.imagenPerfil) {
             formData.append('imagenPerfil', this.companyImageFiles.imagenPerfil);
           }
-          const uploadRes = await axios.post(`${API_URL}/companies/upload-images`, formData, {
+          const uploadRes = await api.post('/api/companies/upload-images', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
               Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -487,7 +484,7 @@ export default {
           imagenBannerUrl = uploadRes.data.imagenBannerUrl || imagenBannerUrl;
           imagenPerfilUrl = uploadRes.data.imagenPerfilUrl || imagenPerfilUrl;
         }
-        const updateRes = await axios.put(`${API_URL}/companies/${this.currentUserCompanyId}`, {
+        const updateRes = await api.put(`/api/companies/${this.currentUserCompanyId}`, {
           ...this.currentCompany,
           imagenBanner: imagenBannerUrl,
           imagenPerfil: imagenPerfilUrl
@@ -510,7 +507,7 @@ export default {
       
       this.loadingProducts = true;
       try {
-        const response = await axios.get(`${API_URL}/products?compania_id=${this.currentUserCompanyId}`);
+        const response = await api.get(`/api/products?compania_id=${this.currentUserCompanyId}`);
         this.companyProducts = response.data;
       } catch (error) {
         this.handleError(error, 'Error al cargar productos');
@@ -587,7 +584,7 @@ export default {
         let response;
         if (this.isEditModeProduct) {
           // Actualizar producto existente
-          response = await axios.put(`${API_URL}/products/${this.currentProduct._id}`, this.currentProduct);
+          response = await api.put(`/api/products/${this.currentProduct._id}`, this.currentProduct);
           this.showSuccess('Producto actualizado con éxito');
           
           // Actualizar en la lista local
@@ -597,7 +594,7 @@ export default {
           }
         } else {
           // Crear nuevo producto
-          response = await axios.post(`${API_URL}/products`, this.currentProduct);
+          response = await api.post('/api/products', this.currentProduct);
           this.showSuccess('Producto creado con éxito');
           
           // Añadir a la lista local
@@ -634,7 +631,7 @@ export default {
       
       this.loadingBrands = true;
       try {
-        const response = await axios.get(`${API_URL}/brands?compania=${this.currentUserCompanyId}`);
+        const response = await api.get(`/api/brands?compania=${this.currentUserCompanyId}`);
         this.companyBrands = response.data;
       } catch (error) {
         this.handleError(error, 'Error al cargar marcas');
@@ -682,7 +679,7 @@ export default {
         let response;
         if (this.isEditModeBrand) {
           // Actualizar marca existente
-          response = await axios.put(`${API_URL}/brands/${this.currentBrand._id}`, this.currentBrand);
+          response = await api.put(`/api/brands/${this.currentBrand._id}`, this.currentBrand);
           this.showSuccess('Marca actualizada con éxito');
           
           // Actualizar en la lista local
@@ -692,7 +689,7 @@ export default {
           }
         } else {
           // Crear nueva marca
-          response = await axios.post(`${API_URL}/brands`, this.currentBrand);
+          response = await api.post('/api/brands', this.currentBrand);
           this.showSuccess('Marca creada con éxito');
           
           // Añadir a la lista local
@@ -728,7 +725,7 @@ export default {
         if (this.deleteType === 'product') {
           // Eliminar producto
           console.log(`Intentando eliminar producto con ID: ${this.itemToDelete._id}`);
-          const response = await axios.delete(`${API_URL}/products/${this.itemToDelete._id}`);
+          const response = await api.delete(`/api/products/${this.itemToDelete._id}`);
           console.log('Respuesta del servidor:', response.data);
 
           this.showSuccess('Producto eliminado con éxito');
@@ -754,7 +751,7 @@ export default {
           }
 
           // Eliminar marca
-          const response = await axios.delete(`${API_URL}/brands/${this.itemToDelete._id}`);
+          const response = await api.delete(`/api/brands/${this.itemToDelete._id}`);
           console.log('Respuesta del servidor:', response.data);
 
           this.showSuccess('Marca eliminada con éxito');

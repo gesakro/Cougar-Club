@@ -154,7 +154,7 @@
 <script>
 import AppFooter from '@/components/layout/AppFooter.vue';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
-import axios from 'axios';
+import api from '@/api/api';
 
 export default {
   name: 'UserSignup',
@@ -242,7 +242,7 @@ export default {
         };
 
         // Llamada a la API para registrar al usuario normal
-        const response = await axios.post('http://localhost:5000/api/auth/register', signupData);
+        const response = await api.post('/api/auth/register', signupData);
 
         // Si el registro es exitoso, guardar el token en localStorage
         if (response.data && response.data.token) {

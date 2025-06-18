@@ -1,12 +1,9 @@
 <script>
-import axios from 'axios';
+import api from '@/api/api';
 import AuthService from '../../services/authService.js';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
 import { useToast } from 'vue-toastification';
-
-// API base URL - mejor práctica para mantenimiento
-const API_URL = 'http://localhost:5000/api';
 
 export default {
   name: 'CompanyManagement',
@@ -191,7 +188,7 @@ export default {
             formData.append('imagenPerfil', this.companyImageFiles.imagenPerfil);
           }
           
-          const response = await axios.post(`${API_URL}/companies/upload-images`, formData, { headers });
+          const response = await api.post('/api/companies/upload-images', formData, { headers });
           
           return {
             imagenBannerUrl: response.data.imagenBannerUrl || this.currentCompany.imagenBanner,
@@ -205,7 +202,7 @@ export default {
           const formData = new FormData();
           formData.append('imagen', this.productImageFile);
           
-          const response = await axios.post(`${API_URL}/products/upload-image`, formData, { headers });
+          const response = await api.post('/api/products/upload-image', formData, { headers });
           
           return { 
             imagenUrl: response.data.imagenUrl || this.currentProduct.imagen 
@@ -228,7 +225,7 @@ export default {
     async fetchCompanies() {
       this.loading = true;
       try {
-        const response = await axios.get(`${API_URL}/companies`);
+        const response = await api.get('/api/companies');
         this.companies = response.data;
       } catch (error) {
         this.handleError(error, 'Error al cargar compañías');
@@ -284,7 +281,7 @@ export default {
         let response;
         if (this.isEditMode) {
           // Actualizar compañía existente
-          response = await axios.put(`${API_URL}/companies/${this.currentCompany._id}`, this.currentCompany);
+          response = await api.put(`/api/companies/${this.currentCompany._id}`, this.currentCompany);
           this.toast.success('Compañía actualizada con éxito');
           
           // Actualizar en la lista local
@@ -294,7 +291,7 @@ export default {
           }
         } else {
           // Crear nueva compañía
-          response = await axios.post(`${API_URL}/companies`, this.currentCompany);
+          response = await api.post('/api/companies', this.currentCompany);
           this.toast.success('Compañía creada con éxito');
           
           // Añadir a la lista local
@@ -319,8 +316,8 @@ export default {
       try {
         // Cargar productos y marcas en paralelo para mejorar rendimiento
         const [productsResponse, brandsResponse] = await Promise.all([
-          axios.get(`${API_URL}/products?compania_id=${companyId}`),
-          axios.get(`${API_URL}/brands?compania=${companyId}`)
+          api.get(`/api/products?compania_id=${companyId}`),
+          api.get(`/api/brands?compania=${companyId}`)
         ]);
         
         this.companyProducts = productsResponse.data;
@@ -382,7 +379,7 @@ export default {
         let response;
         if (this.isEditModeProduct) {
           // Actualizar producto existente
-          response = await axios.put(`${API_URL}/products/${this.currentProduct._id}`, this.currentProduct);
+          response = await api.put(`/api/products/${this.currentProduct._id}`, this.currentProduct);
           this.toast.success('Producto actualizado con éxito');
           
           // Actualizar en la lista local
@@ -392,7 +389,7 @@ export default {
           }
         } else {
           // Crear nuevo producto
-          response = await axios.post(`${API_URL}/products`, this.currentProduct);
+          response = await api.post('/api/products', this.currentProduct);
           this.toast.success('Producto creado con éxito');
           
           // Añadir a la lista local
@@ -427,7 +424,7 @@ export default {
         let response;
         if (this.isEditModeBrand) {
           // Actualizar marca existente
-          response = await axios.put(`${API_URL}/brands/${this.currentBrand._id}`, this.currentBrand);
+          response = await api.put(`/api/brands/${this.currentBrand._id}`, this.currentBrand);
           this.toast.success('Marca actualizada con éxito');
           
           // Actualizar en la lista local
@@ -437,7 +434,7 @@ export default {
           }
         } else {
           // Crear nueva marca
-          response = await axios.post(`${API_URL}/brands`, this.currentBrand);
+          response = await api.post('/api/brands', this.currentBrand);
           this.toast.success('Marca creada con éxito');
           
           // Añadir a la lista local
@@ -462,21 +459,21 @@ export default {
         // Usar un objeto para mapear tipos a endpoints y mensajes
         const deleteOptions = {
           company: {
-            endpoint: `${API_URL}/companies/${this.itemToDelete._id}`,
+            endpoint: `/api/companies/${this.itemToDelete._id}`,
             successMessage: 'Compañía eliminada con éxito',
             updateList: () => {
               this.companies = this.companies.filter(c => c._id !== this.itemToDelete._id);
             }
           },
           product: {
-            endpoint: `${API_URL}/products/${this.itemToDelete._id}`,
+            endpoint: `/api/products/${this.itemToDelete._id}`,
             successMessage: 'Producto eliminado con éxito',
             updateList: () => {
               this.companyProducts = this.companyProducts.filter(p => p._id !== this.itemToDelete._id);
             }
           },
           brand: {
-            endpoint: `${API_URL}/brands/${this.itemToDelete._id}`,
+            endpoint: `/api/brands/${this.itemToDelete._id}`,
             successMessage: 'Marca eliminada con éxito',
             updateList: () => {
               this.companyBrands = this.companyBrands.filter(b => b._id !== this.itemToDelete._id);
@@ -487,7 +484,7 @@ export default {
         const options = deleteOptions[this.deleteType];
         
         if (options) {
-          await axios.delete(options.endpoint);
+          await api.delete(options.endpoint);
           this.toast.success(options.successMessage);
           options.updateList();
         }

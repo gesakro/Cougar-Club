@@ -171,6 +171,7 @@ import CouponService from '@/services/CouponService';
 import PriceService from '@/services/PriceService';
 import PaymentBrick from '@/components/PaymentBrick.vue';
 import BuyerForm from '@/components/BuyerForm.vue';
+import api from '@/api/api';
 
 export default {
   name: 'CartView',
@@ -313,16 +314,11 @@ export default {
       try {
         // Actualizar stock para cada producto
         for (const item of this.cart) {
-          const response = await fetch(`${process.env.VUE_APP_API_URL || 'http://localhost:5000/api'}/products/${item.id}/update-stock`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ quantity: item.quantity })
+          const response = await api.post(`/api/products/${item.id}/update-stock`, {
+            quantity: item.quantity
           });
 
-          if (!response.ok) {
+          if (!response.data) {
             throw new Error('Error al actualizar el stock de los productos');
           }
         }

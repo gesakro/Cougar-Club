@@ -298,7 +298,7 @@
 <script>
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
-import apiClient from '@/services/axiosConfig';
+import api from '@/api/api';
 import PriceService from '@/services/PriceService';
 
 export default {
@@ -361,9 +361,9 @@ export default {
       try {
         // Obtener datos actualizados del servidor
         const [profileResponse, statsResponse, couponsResponse] = await Promise.all([
-          apiClient.get('/users/profile'),
-          apiClient.get('/users/stats'),
-          apiClient.get('/users/coupons')
+          api.get('/api/users/profile'),
+          api.get('/api/users/stats'),
+          api.get('/api/users/coupons')
         ]);
 
         // Actualizar con los datos del servidor
@@ -422,7 +422,7 @@ export default {
         };
 
         // Enviar la actualización al backend
-        const response = await apiClient.put('/users/profile', userData);
+        const response = await api.put('/api/users/profile', userData);
 
         // Actualizar el estado local con la respuesta del servidor
         if (response.data) {
