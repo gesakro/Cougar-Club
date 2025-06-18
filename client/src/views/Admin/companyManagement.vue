@@ -640,41 +640,41 @@ export default {
     <!-- MODALES -->
     
     <!-- Modal para crear/editar compañía -->
-    <div v-if="showCompanyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl overflow-hidden">
-        <div class="bg-gray-100 px-6 py-4 border-b flex justify-between items-center">
-          <h2 class="text-xl font-semibold">{{ isEditMode ? 'Editar' : 'Nueva' }} Compañía</h2>
-          <button @click="closeCompanyModal" class="text-gray-500 hover:text-gray-700">&times;</button>
+    <div v-if="showCompanyModal" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2>{{ isEditMode ? 'Editar' : 'Nueva' }} Compañía</h2>
+          <button @click="closeCompanyModal" class="modal-close-btn">&times;</button>
         </div>
         
-        <div class="p-6">
+        <div class="modal-body">
           <form @submit.prevent="saveCompany">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <div class="form-grid">
+              <div class="form-group md:col-span-2">
+                <label class="form-label">Nombre</label>
                 <input 
                   type="text" 
                   v-model="currentCompany.nombre" 
                   required
-                  class="w-full px-3 py-2 border rounded-md"
+                  class="form-input"
                 />
               </div>
               
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <div class="form-group md:col-span-2">
+                <label class="form-label">Email</label>
                 <input 
                   type="email" 
                   v-model="currentCompany.email" 
                   required
-                  class="w-full px-3 py-2 border rounded-md"
+                  class="form-input"
                 />
               </div>
               
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+              <div class="form-group">
+                <label class="form-label">Plan</label>
                 <select 
                   v-model="currentCompany.plan" 
-                  class="w-full px-3 py-2 border rounded-md"
+                  class="form-select"
                 >
                   <option v-for="option in planOptions" :key="option" :value="option">
                     {{ option }}
@@ -682,66 +682,73 @@ export default {
                 </select>
               </div>
               
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Imagen Banner</label>
-                <div class="flex items-center space-x-4">
-                  <input 
-                    type="file" 
-                    @change="e => handleImageChange(e, 'company', 'imagenBanner')" 
-                    accept="image/*"
-                    class="flex-1"
-                  />
-                  <img 
-                    v-if="currentCompany.imagenBanner" 
-                    :src="currentCompany.imagenBanner" 
-                    class="h-12 w-24 object-cover rounded"
-                    alt="Vista previa banner"
-                  />
-                  <img 
-                    v-else
-                    src="https://via.placeholder.com/96x48" 
-                    class="h-12 w-24 object-cover rounded"
-                    alt="Banner por defecto"
-                  />
+              <!-- Campos de imagen solo visibles en modo edición -->
+              <template v-if="isEditMode">
+                <div class="form-group md:col-span-2">
+                  <label class="form-label">Imagen Banner</label>
+                  <div class="image-preview-container">
+                    <div class="file-input-container">
+                      <input 
+                        type="file" 
+                        @change="e => handleImageChange(e, 'company', 'imagenBanner')" 
+                        accept="image/*"
+                        class="form-input"
+                      />
+                    </div>
+                    <img 
+                      v-if="currentCompany.imagenBanner" 
+                      :src="currentCompany.imagenBanner" 
+                      class="image-preview"
+                      alt="Vista previa banner"
+                    />
+                    <img 
+                      v-else
+                      src="https://via.placeholder.com/96x48" 
+                      class="image-preview"
+                      alt="Banner por defecto"
+                    />
+                  </div>
                 </div>
-              </div>
-              
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Imagen Perfil</label>
-                <div class="flex items-center space-x-4">
-                  <input 
-                    type="file" 
-                    @change="e => handleImageChange(e, 'company', 'imagenPerfil')" 
-                    accept="image/*"
-                    class="flex-1"
-                  />
-                  <img 
-                    v-if="currentCompany.imagenPerfil" 
-                    :src="currentCompany.imagenPerfil" 
-                    class="h-12 w-12 object-cover rounded-full"
-                    alt="Vista previa perfil"
-                  />
-                  <img 
-                    v-else
-                    src="https://via.placeholder.com/48x48" 
-                    class="h-12 w-12 object-cover rounded-full"
-                    alt="Perfil por defecto"
-                  />
+                
+                <div class="form-group md:col-span-2">
+                  <label class="form-label">Imagen Perfil</label>
+                  <div class="image-preview-container">
+                    <div class="file-input-container">
+                      <input 
+                        type="file" 
+                        @change="e => handleImageChange(e, 'company', 'imagenPerfil')" 
+                        accept="image/*"
+                        class="form-input"
+                      />
+                    </div>
+                    <img 
+                      v-if="currentCompany.imagenPerfil" 
+                      :src="currentCompany.imagenPerfil" 
+                      class="image-preview rounded-full"
+                      alt="Vista previa perfil"
+                    />
+                    <img 
+                      v-else
+                      src="https://via.placeholder.com/48x48" 
+                      class="image-preview rounded-full"
+                      alt="Perfil por defecto"
+                    />
+                  </div>
                 </div>
-              </div>
+              </template>
             </div>
             
-            <div class="mt-6 flex justify-end space-x-3">
+            <div class="modal-footer">
               <button 
                 type="button" 
                 @click="closeCompanyModal" 
-                class="px-4 py-2 border rounded-md hover:bg-gray-50"
+                class="btn btn-secondary"
               >
                 Cancelar
               </button>
               <button 
                 type="submit" 
-                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                class="btn btn-primary"
               >
                 {{ isEditMode ? 'Actualizar' : 'Crear' }}
               </button>
@@ -752,37 +759,33 @@ export default {
     </div>
     
     <!-- Modal de productos de compañía -->
-    <div v-if="showProductsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-lg w-full max-w-5xl overflow-hidden">
-        <div class="bg-gray-100 px-6 py-4 border-b flex justify-between items-center">
-          <h2 class="text-xl font-semibold">Productos de {{ selectedCompanyName }}</h2>
-          <button @click="closeProductsModal" class="text-gray-500 hover:text-gray-700">&times;</button>
+    <div v-if="showProductsModal" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2>Productos de {{ selectedCompanyName }}</h2>
+          <button @click="closeProductsModal" class="modal-close-btn">&times;</button>
         </div>
         
-        <div class="p-6">
-          <!-- Acciones de productos -->
-          <div class="flex justify-between items-center mb-6">
-            <div class="flex space-x-3">
-              <button 
-                v-if="canManageProducts" 
-                @click="openProductModal()" 
-                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-              >
-                Nuevo Producto
-              </button>
-              
-              <button 
-                v-if="canManageProducts" 
-                @click="openBrandModal()" 
-                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
-              >
-                Nueva Marca
-              </button>
-            </div>
+        <div class="modal-body">
+          <div class="flex flex-wrap gap-4 mb-6">
+            <button 
+              v-if="canManageProducts" 
+              @click="openProductModal()" 
+              class="btn btn-primary"
+            >
+              Nuevo Producto
+            </button>
+            
+            <button 
+              v-if="canManageProducts" 
+              @click="openBrandModal()" 
+              class="btn btn-primary"
+            >
+              Nueva Marca
+            </button>
           </div>
           
-          <!-- Tabla de productos -->
-          <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
+          <div class="table-container">
             <div v-if="loadingProducts" class="p-4 text-center">
               <p>Cargando productos...</p>
             </div>
@@ -791,52 +794,48 @@ export default {
               <p>Esta compañía no tiene productos registrados</p>
             </div>
             
-            <table v-else class="min-w-full">
-              <thead class="bg-gray-100">
+            <table v-else class="modal-table">
+              <thead>
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Imagen</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marca</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                  <th>Imagen</th>
+                  <th>Nombre</th>
+                  <th>Precio</th>
+                  <th>Stock</th>
+                  <th>Categoría</th>
+                  <th>Marca</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-200">
+              <tbody>
                 <tr v-for="product in companyProducts" :key="product._id">
-                  <td class="px-6 py-4 whitespace-nowrap">
+                  <td>
                     <img 
                       :src="product.imagen || '/img/default-product.png'" 
                       class="h-12 w-12 object-cover rounded"
                       alt="Imagen del producto"
                     />
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">{{ product.nombre }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap">${{ formatPrice(product.precio) }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap">{{ product.stock }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap">{{ product.categoria }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap">
+                  <td>{{ product.nombre }}</td>
+                  <td>${{ formatPrice(product.precio) }}</td>
+                  <td>{{ product.stock }}</td>
+                  <td>{{ product.categoria }}</td>
+                  <td>
                     {{ companyBrands.find(b => b._id === product.marca_id)?.nombre || 'N/D' }}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex space-x-2">
-                      <!-- Editar producto -->
+                  <td>
+                    <div class="flex flex-wrap gap-2">
                       <button 
                         v-if="canManageProducts" 
                         @click="openProductModal(product)" 
-                        class="text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 px-2 py-1 rounded"
-                        title="Editar producto"
+                        class="btn btn-secondary"
                       >
                         Editar
                       </button>
                       
-                      <!-- Eliminar producto -->
                       <button 
                         v-if="canManageProducts" 
                         @click="confirmDelete(product, 'product')" 
-                        class="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 px-2 py-1 rounded"
-                        title="Eliminar producto"
+                        class="btn btn-danger"
                       >
                         Eliminar
                       </button>
@@ -848,8 +847,8 @@ export default {
           </div>
           
           <!-- Sección de marcas -->
-          <h3 class="text-lg font-semibold mb-4">Marcas de la compañía</h3>
-          <div class="bg-white shadow rounded-lg overflow-hidden">
+          <h3 class="text-lg font-semibold my-6">Marcas de la compañía</h3>
+          <div class="table-container">
             <div v-if="loadingProducts" class="p-4 text-center">
               <p>Cargando marcas...</p>
             </div>
@@ -858,38 +857,34 @@ export default {
               <p>Esta compañía no tiene marcas registradas</p>
             </div>
             
-            <table v-else class="min-w-full">
-              <thead class="bg-gray-100">
+            <table v-else class="modal-table">
+              <thead>
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Productos</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                  <th>Nombre</th>
+                  <th>Productos</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-200">
+              <tbody>
                 <tr v-for="brand in companyBrands" :key="brand._id">
-                  <td class="px-6 py-4 whitespace-nowrap">{{ brand.nombre }}</td>
-                  <td class="px-6 py-4 whitespace-nowrap">
+                  <td>{{ brand.nombre }}</td>
+                  <td>
                     {{ companyProducts.filter(p => p.marca_id === brand._id).length }}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex space-x-2">
-                      <!-- Editar marca -->
+                  <td>
+                    <div class="flex flex-wrap gap-2">
                       <button 
                         v-if="canManageProducts" 
                         @click="openBrandModal(brand)" 
-                        class="text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 px-2 py-1 rounded"
-                        title="Editar marca"
+                        class="btn btn-secondary"
                       >
                         Editar
                       </button>
                       
-                      <!-- Eliminar marca -->
                       <button 
                         v-if="canManageProducts && !companyProducts.some(p => p.marca_id === brand._id)" 
                         @click="confirmDelete(brand, 'brand')" 
-                        class="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 px-2 py-1 rounded"
-                        title="Eliminar marca"
+                        class="btn btn-danger"
                       >
                         Eliminar
                       </button>
@@ -904,64 +899,64 @@ export default {
     </div>
     
     <!-- Modal para crear/editar producto -->
-    <div v-if="showProductModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl overflow-hidden">
-        <div class="bg-gray-100 px-6 py-4 border-b flex justify-between items-center">
-          <h2 class="text-xl font-semibold">{{ isEditModeProduct ? 'Editar' : 'Nuevo' }} Producto</h2>
-          <button @click="closeProductModal" class="text-gray-500 hover:text-gray-700">&times;</button>
+    <div v-if="showProductModal" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2>{{ isEditModeProduct ? 'Editar' : 'Nuevo' }} Producto</h2>
+          <button @click="closeProductModal" class="modal-close-btn">&times;</button>
         </div>
         
-        <div class="p-6">
+        <div class="modal-body">
           <form @submit.prevent="saveProduct">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <div class="form-grid">
+              <div class="form-group md:col-span-2">
+                <label class="form-label">Nombre</label>
                 <input 
                   type="text" 
                   v-model="currentProduct.nombre" 
                   required
-                  class="w-full px-3 py-2 border rounded-md"
+                  class="form-input"
                 />
               </div>
               
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Precio</label>
+              <div class="form-group">
+                <label class="form-label">Precio</label>
                 <input 
                   type="number" 
                   v-model="currentProduct.precio" 
                   min="0" 
                   step="0.01" 
                   required
-                  class="w-full px-3 py-2 border rounded-md"
+                  class="form-input"
                 />
               </div>
               
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+              <div class="form-group">
+                <label class="form-label">Stock</label>
                 <input 
                   type="number" 
                   v-model="currentProduct.stock" 
                   min="0" 
                   required
-                  class="w-full px-3 py-2 border rounded-md"
+                  class="form-input"
                 />
               </div>
               
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+              <div class="form-group">
+                <label class="form-label">Categoría</label>
                 <input 
                   type="text" 
                   v-model="currentProduct.categoria" 
                   required
-                  class="w-full px-3 py-2 border rounded-md"
+                  class="form-input"
                 />
               </div>
               
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Marca</label>
+              <div class="form-group">
+                <label class="form-label">Marca</label>
                 <select 
                   v-model="currentProduct.marca_id" 
-                  class="w-full px-3 py-2 border rounded-md"
+                  class="form-select"
                 >
                   <option value="">Seleccionar marca</option>
                   <option 
@@ -974,45 +969,47 @@ export default {
                 </select>
               </div>
               
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+              <div class="form-group md:col-span-2">
+                <label class="form-label">Descripción</label>
                 <textarea 
                   v-model="currentProduct.descripcion" 
                   rows="4"
-                  class="w-full px-3 py-2 border rounded-md"
+                  class="form-textarea"
                 ></textarea>
               </div>
               
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Imagen</label>
-                <div class="flex items-center space-x-4">
-                  <input 
-                    type="file" 
-                    @change="e => handleImageChange(e, 'product', 'imagen')" 
-                    accept="image/*"
-                    class="flex-1"
-                  />
+              <div class="form-group md:col-span-2">
+                <label class="form-label">Imagen</label>
+                <div class="image-preview-container">
+                  <div class="file-input-container">
+                    <input 
+                      type="file" 
+                      @change="e => handleImageChange(e, 'product', 'imagen')" 
+                      accept="image/*"
+                      class="form-input"
+                    />
+                  </div>
                   <img 
                     v-if="currentProduct.imagen" 
                     :src="currentProduct.imagen" 
-                    class="h-12 w-12 object-cover rounded"
+                    class="image-preview"
                     alt="Vista previa producto"
                   />
                 </div>
               </div>
             </div>
             
-            <div class="mt-6 flex justify-end space-x-3">
+            <div class="modal-footer">
               <button 
                 type="button" 
                 @click="closeProductModal" 
-                class="px-4 py-2 border rounded-md hover:bg-gray-50"
+                class="btn btn-secondary"
               >
                 Cancelar
               </button>
               <button 
                 type="submit" 
-                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                class="btn btn-primary"
               >
                 {{ isEditModeProduct ? 'Actualizar' : 'Crear' }}
               </button>
@@ -1023,36 +1020,36 @@ export default {
     </div>
     
     <!-- Modal para crear/editar marca -->
-    <div v-if="showBrandModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-lg w-full max-w-md overflow-hidden">
-        <div class="bg-gray-100 px-6 py-4 border-b flex justify-between items-center">
-          <h2 class="text-xl font-semibold">{{ isEditModeBrand ? 'Editar' : 'Nueva' }} Marca</h2>
-          <button @click="closeBrandModal" class="text-gray-500 hover:text-gray-700">&times;</button>
+    <div v-if="showBrandModal" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2>{{ isEditModeBrand ? 'Editar' : 'Nueva' }} Marca</h2>
+          <button @click="closeBrandModal" class="modal-close-btn">&times;</button>
         </div>
         
-        <div class="p-6">
+        <div class="modal-body">
           <form @submit.prevent="saveBrand">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+            <div class="form-group">
+              <label class="form-label">Nombre</label>
               <input 
                 type="text" 
                 v-model="currentBrand.nombre" 
                 required
-                class="w-full px-3 py-2 border rounded-md"
+                class="form-input"
               />
             </div>
             
-            <div class="mt-6 flex justify-end space-x-3">
+            <div class="modal-footer">
               <button 
                 type="button" 
                 @click="closeBrandModal" 
-                class="px-4 py-2 border rounded-md hover:bg-gray-50"
+                class="btn btn-secondary"
               >
                 Cancelar
               </button>
               <button 
                 type="submit" 
-                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                class="btn btn-primary"
               >
                 {{ isEditModeBrand ? 'Actualizar' : 'Crear' }}
               </button>
@@ -1063,14 +1060,14 @@ export default {
     </div>
     
     <!-- Modal de confirmación de eliminación -->
-    <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-lg w-full max-w-md overflow-hidden">
-        <div class="bg-gray-100 px-6 py-4 border-b flex justify-between items-center">
-          <h2 class="text-xl font-semibold">Confirmar eliminación</h2>
-          <button @click="showDeleteModal = false" class="text-gray-500 hover:text-gray-700">&times;</button>
+    <div v-if="showDeleteModal" class="modal-overlay">
+      <div class="modal-container max-w-md">
+        <div class="modal-header">
+          <h2>Confirmar eliminación</h2>
+          <button @click="showDeleteModal = false" class="modal-close-btn">&times;</button>
         </div>
         
-        <div class="p-6">
+        <div class="modal-body">
           <p class="mb-6">
             ¿Está seguro que desea eliminar 
             <span v-if="deleteType === 'company'">la compañía "{{ itemToDelete.nombre }}"</span>
@@ -1079,16 +1076,16 @@ export default {
             ? Esta acción no se puede deshacer.
           </p>
           
-          <div class="flex justify-end space-x-3">
+          <div class="modal-footer">
             <button 
               @click="showDeleteModal = false" 
-              class="px-4 py-2 border rounded-md hover:bg-gray-50"
+              class="btn btn-secondary"
             >
               Cancelar
             </button>
             <button 
               @click="executeDelete" 
-              class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              class="btn btn-danger"
             >
               Eliminar
             </button>
@@ -1122,6 +1119,12 @@ export default {
   --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
   --border-radius: 6px;
   --transition: all 0.3s ease;
+  --modal-width-sm: 400px;
+  --modal-width-md: 600px;
+  --modal-width-lg: 800px;
+  --modal-width-xl: 1024px;
+  --header-height: 64px;
+  --footer-height: 76px;
 }
 
 /* Reset de estilos y base */
@@ -1515,31 +1518,341 @@ input:focus, textarea:focus, select:focus {
   gap: 1rem;
 }
 
-/* Modales */
-.fixed.inset-0 {
+/* Estilos mejorados para modales */
+.modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 1rem;
+  overflow-y: auto;
 }
 
-.bg-white.p-6 {
+.modal-container {
   background-color: var(--color-white);
   border-radius: var(--border-radius);
   width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
+  max-height: calc(100vh - 2rem);
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
+  margin: 1rem;
+  animation: modalFadeIn 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-container.max-w-md {
+  max-width: var(--modal-width-md);
+}
+
+.modal-header {
+  background-color: var(--color-accent-light);
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--color-gray);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: var(--header-height);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--color-gray-dark);
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: var(--transition);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 1rem;
+}
+
+.modal-close-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: var(--color-primary-dark);
+}
+
+.modal-body {
   padding: 1.5rem;
-  animation: modalFadeIn 0.3s;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  background-color: var(--color-gray-light);
+  border-top: 1px solid var(--color-gray);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  min-height: var(--footer-height);
+}
+
+.form-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group.md\:col-span-2 {
+  grid-column: 1 / -1;
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--color-primary-dark);
+  font-size: 0.9rem;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--color-gray);
+  border-radius: var(--border-radius);
+  font-size: 0.95rem;
+  transition: var(--transition);
+  background-color: var(--color-white);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(139, 90, 43, 0.2);
+  outline: none;
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Contenedor de vista previa de imagen */
+.image-preview-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.file-input-container {
+  flex: 1;
+  min-width: 200px;
+}
+
+.image-preview {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: var(--border-radius);
+  border: 2px solid var(--color-gray);
+}
+
+.image-preview.rounded-full {
+  border-radius: 50%;
+}
+
+/* Estilos de tabla */
+.table-container {
+  margin: 1rem 0;
+  overflow-x: auto;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  background-color: var(--color-white);
+}
+
+.modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.modal-table th {
+  background-color: var(--color-accent-light);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+  text-align: left;
+  padding: 1rem;
+  white-space: nowrap;
+}
+
+.modal-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--color-gray);
+  vertical-align: middle;
+}
+
+.modal-table tr:last-child td {
+  border-bottom: none;
+}
+
+.modal-table tr:hover td {
+  background-color: var(--color-gray-light);
+}
+
+/* Botones */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  border: none;
+  min-width: 100px;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: var(--color-gray-light);
+  color: var(--color-primary-dark);
+  border: 1px solid var(--color-gray);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-gray);
+}
+
+.btn-danger {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #8B351E;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 0;
+  }
+
+  .modal-container {
+    margin: 0;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .modal-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .form-grid {
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+
+  .image-preview-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .file-input-container {
+    width: 100%;
+  }
+
+  .modal-footer {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .modal-footer button {
+    width: 100%;
+  }
+
+  .table-container {
+    margin: 0.5rem -1rem;
+    border-radius: 0;
+  }
+
+  .modal-table td {
+    padding: 0.75rem;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 0.875rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .modal-container {
+    max-width: 90%;
+    margin: 2rem;
+  }
+
+  .form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .table-container {
+    margin: 1rem -1.5rem;
+    border-radius: 0;
+  }
+}
+
+@media (min-width: 1025px) {
+  .modal-container {
+    max-width: 80%;
+    margin: 2rem;
+  }
+
+  .modal-container.max-w-md {
+    max-width: var(--modal-width-md);
+  }
+
+  .form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
 }
 
 @keyframes modalFadeIn {
@@ -1550,54 +1863,6 @@ input:focus, textarea:focus, select:focus {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-.text-lg.font-semibold.mb-4 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-primary-dark);
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--color-gray);
-  padding-bottom: 0.75rem;
-}
-
-/* Formularios */
-.block.text-gray-700.mb-2 {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  font-size: 0.9rem;
-  color: var(--color-primary-dark);
-}
-
-.w-full.px-3.py-2.border.border-gray-300.rounded {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--color-gray);
-  border-radius: var(--border-radius);
-  font-family: var(--font-family);
-  font-size: 0.9rem;
-  color: var(--color-text);
-  transition: var(--transition);
-  background-color: var(--color-white);
-  margin-bottom: 1rem;
-}
-
-.w-full.px-3.py-2.border.border-gray-300.rounded:focus {
-  outline: none;
-  border-color: var(--color-primary-light);
-  box-shadow: 0 0 0 3px rgba(166, 124, 82, 0.2);
-}
-
-/* Media queries */
-@media (min-width: 768px) {
-  .md\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  
-  .md\:col-span-2 {
-    grid-column: span 2 / span 2;
   }
 }
 

@@ -103,8 +103,6 @@ export default {
         },
         customization: {
           paymentMethods: {
-            creditCard: 'all',
-            debitCard: 'all',
             bankTransfer: 'all',
             ticket: 'all',
             wallet_purchase: 'all'

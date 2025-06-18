@@ -850,42 +850,6 @@ export default {
                   </div>
                 </div>
               </div>
-              
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Imagen Banner</label>
-                <div class="flex items-center space-x-4">
-                  <input 
-                    type="file" 
-                    @change="e => handleImageChange(e, 'company', 'imagenBanner')" 
-                    accept="image/*"
-                    class="flex-1"
-                  />
-                  <img 
-                    v-if="currentCompany.imagenBanner" 
-                    :src="currentCompany.imagenBanner" 
-                    class="h-12 w-24 object-cover rounded"
-                    alt="Vista previa banner"
-                  />
-                </div>
-              </div>
-              
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Imagen Perfil</label>
-                <div class="flex items-center space-x-4">
-                  <input 
-                    type="file" 
-                    @change="e => handleImageChange(e, 'company', 'imagenPerfil')" 
-                    accept="image/*"
-                    class="flex-1"
-                  />
-                  <img 
-                    v-if="currentCompany.imagenPerfil" 
-                    :src="currentCompany.imagenPerfil" 
-                    class="h-12 w-12 object-cover rounded-full"
-                    alt="Vista previa perfil"
-                  />
-                </div>
-              </div>
             </div>
             
             <div class="mt-6 flex justify-end space-x-3">

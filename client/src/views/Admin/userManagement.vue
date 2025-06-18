@@ -33,7 +33,7 @@
       <div v-if="currentTab === 'managers'">
         <div class="flex justify-between mb-4">
           <h2 class="text-xl font-semibold">Gestión de Gerentes</h2>
-          <button @click="openManagerForm()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+          <button @click="openManagerForm()" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded transition-transform hover:scale-105">
             Agregar Gerente
           </button>
         </div>
@@ -138,7 +138,7 @@
       <div v-if="currentTab === 'users'">
         <div class="flex justify-between mb-4">
           <h2 class="text-xl font-semibold">Gestión de Usuarios</h2>
-          <button @click="openUserForm()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+          <button @click="openUserForm()" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded transition-transform hover:scale-105">
             Agregar Usuario
           </button>
         </div>
@@ -733,22 +733,20 @@ button.py-2 {
 }
 
 /* Botones */
-.bg-blue-500, .hover\:bg-blue-600:hover {
+.bg-primary {
   background-color: var(--color-primary);
-  color: var(--color-white);
-  padding: 0.6rem 1.2rem;
-  border-radius: var(--border-radius);
-  font-weight: 500;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: var(--transition);
-  border: none;
 }
 
-.hover\:bg-blue-600:hover {
+.hover\:bg-primary-dark:hover {
   background-color: var(--color-primary-dark);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+}
+
+.transition-transform {
+  transition: transform 0.3s ease;
+}
+
+.hover\:scale-105:hover {
+  transform: scale(1.05);
 }
 
 .bg-gray-300 {
