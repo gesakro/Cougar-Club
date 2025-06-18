@@ -80,12 +80,14 @@ export default {
       document.body.appendChild(script);
     },
     async initializeBrick() {
-      const publicKey = process.env.VUE_APP_MP_PUBLIC_KEY || process.env.MP_PUBLIC_KEY || 'TEST-00000000-0000-0000-0000-000000000000';
+      const publicKey = 'TEST-077e18a0-5ed1-4b6c-94f7-f3b8c202274f';
       console.log('Public Key:', publicKey);
+      
       if (typeof publicKey !== 'string' || !publicKey.trim() || publicKey === 'undefined') {
         console.error('Public Key must be a non-empty string. Received:', publicKey);
         return;
       }
+      
       this.mpInstance = new window.MercadoPago(publicKey, {
         locale: 'es-CO'
       });
@@ -94,6 +96,7 @@ export default {
       if (this.brickController) {
         this.brickController.unmount();
       }
+      
       this.brickController = await bricksBuilder.create('payment', 'paymentBrick_container', {
         initialization: {
           amount: Math.round(this.amount),
@@ -105,6 +108,7 @@ export default {
           paymentMethods: {
             bankTransfer: 'all',
             ticket: 'all',
+            pse: 'all',
             wallet_purchase: 'all'
           },
           visual: {
