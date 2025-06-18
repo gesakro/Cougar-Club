@@ -10,7 +10,7 @@ const app = express();
 connectDB();
 
 // Definir los orígenes permitidos
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:8080'];
+const allowedOrigins = ['http://localhost:3000', 'http://localhost:8080', 'https://cougar-club-9spj.vercel.app'];
 
 app.use(express.json());
 
