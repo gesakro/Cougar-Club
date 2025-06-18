@@ -3,6 +3,7 @@ import axios from 'axios';
 import AuthService from '../../services/authService.js';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
+import { useToast } from 'vue-toastification';
 
 // API base URL - mejor práctica para mantenimiento
 const API_URL = 'http://localhost:5000/api';
@@ -12,6 +13,11 @@ export default {
   components: {
     AppNavbar,
     AppFooter
+  },
+  
+  setup() {
+    const toast = useToast();
+    return { toast };
   },
   
   data() {
@@ -215,7 +221,7 @@ export default {
     handleError(error, defaultMessage) {
       console.error(defaultMessage, error);
       const errorMessage = error.response?.data?.message || defaultMessage;
-      this.$toast.error(errorMessage);
+      this.toast.error(errorMessage);
     },
     
     // Métodos para compañías
@@ -279,7 +285,7 @@ export default {
         if (this.isEditMode) {
           // Actualizar compañía existente
           response = await axios.put(`${API_URL}/companies/${this.currentCompany._id}`, this.currentCompany);
-          this.$toast.success('Compañía actualizada con éxito');
+          this.toast.success('Compañía actualizada con éxito');
           
           // Actualizar en la lista local
           const index = this.companies.findIndex(c => c._id === this.currentCompany._id);
@@ -289,7 +295,7 @@ export default {
         } else {
           // Crear nueva compañía
           response = await axios.post(`${API_URL}/companies`, this.currentCompany);
-          this.$toast.success('Compañía creada con éxito');
+          this.toast.success('Compañía creada con éxito');
           
           // Añadir a la lista local
           this.companies.push(response.data);
@@ -377,7 +383,7 @@ export default {
         if (this.isEditModeProduct) {
           // Actualizar producto existente
           response = await axios.put(`${API_URL}/products/${this.currentProduct._id}`, this.currentProduct);
-          this.$toast.success('Producto actualizado con éxito');
+          this.toast.success('Producto actualizado con éxito');
           
           // Actualizar en la lista local
           const index = this.companyProducts.findIndex(p => p._id === this.currentProduct._id);
@@ -387,7 +393,7 @@ export default {
         } else {
           // Crear nuevo producto
           response = await axios.post(`${API_URL}/products`, this.currentProduct);
-          this.$toast.success('Producto creado con éxito');
+          this.toast.success('Producto creado con éxito');
           
           // Añadir a la lista local
           this.companyProducts.push(response.data);
@@ -422,7 +428,7 @@ export default {
         if (this.isEditModeBrand) {
           // Actualizar marca existente
           response = await axios.put(`${API_URL}/brands/${this.currentBrand._id}`, this.currentBrand);
-          this.$toast.success('Marca actualizada con éxito');
+          this.toast.success('Marca actualizada con éxito');
           
           // Actualizar en la lista local
           const index = this.companyBrands.findIndex(b => b._id === this.currentBrand._id);
@@ -432,7 +438,7 @@ export default {
         } else {
           // Crear nueva marca
           response = await axios.post(`${API_URL}/brands`, this.currentBrand);
-          this.$toast.success('Marca creada con éxito');
+          this.toast.success('Marca creada con éxito');
           
           // Añadir a la lista local
           this.companyBrands.push(response.data);
@@ -482,7 +488,7 @@ export default {
         
         if (options) {
           await axios.delete(options.endpoint);
-          this.$toast.success(options.successMessage);
+          this.toast.success(options.successMessage);
           options.updateList();
         }
         

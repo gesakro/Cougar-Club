@@ -1,14 +1,5 @@
 <template>
   <div class="menu-wrapper">
-    <!-- Botón del menú (visible siempre) -->
-    <button 
-      @click="toggleMenu"
-      class="menu-button"
-      :aria-expanded="isOpen"
-      aria-label="Menú principal"
-    >
-      <span class="menu-icon">{{ isOpen ? '✕' : '☰' }}</span>
-    </button>
 
     <!-- Overlay (solo visible en mobile) -->
     <transition name="fade">

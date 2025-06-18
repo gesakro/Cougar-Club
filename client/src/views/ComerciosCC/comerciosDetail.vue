@@ -67,9 +67,6 @@
             <a v-if="company.sitioWeb" :href="company.sitioWeb" target="_blank" class="action-btn website-btn">
               <i class="fas fa-globe"></i> Visitar sitio web
             </a>
-            <button class="action-btn contact-btn">
-              <i class="fas fa-comment"></i> Contactar
-            </button>
           </div>
         </div>
       </div>
@@ -103,26 +100,6 @@
               <div class="stat-info">
                 <h3 class="stat-value">{{ products.length }}</h3>
                 <p class="stat-label">Productos</p>
-              </div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-calendar-alt"></i>
-              </div>
-              <div class="stat-info">
-                <h3 class="stat-value">{{ company.fechaCreacion ? formatDate(company.fechaCreacion) : 'N/A' }}</h3>
-                <p class="stat-label">Desde</p>
-              </div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-star"></i>
-              </div>
-              <div class="stat-info">
-                <h3 class="stat-value">{{ company.calificacion || '4.8' }}/5</h3>
-                <p class="stat-label">Calificación</p>
               </div>
             </div>
           </div>
@@ -263,8 +240,35 @@
           </div>
 
           <div class="related-companies">
-            <div class="related-placeholder">
-              <p>Próximamente: Descubre más comercios similares en tu área</p>
+            <div v-if="relatedCompanies.length > 0" class="related-grid">
+              <div v-for="related in relatedCompanies" :key="related._id" class="related-company-card" @click="navigateToCompanyDetail(related._id)">
+                <div class="related-banner">
+                  <img v-if="related.imagenBanner" :src="related.imagenBanner" :alt="`Banner de ${related.nombre}`" class="related-banner-img" />
+                  <div v-else class="related-banner-placeholder">
+                    <i class="fas fa-image"></i>
+                  </div>
+                </div>
+                <div class="related-content">
+                  <div class="related-profile-img-container">
+                    <img v-if="related.imagenPerfil" :src="related.imagenPerfil" :alt="`Perfil de ${related.nombre}`" class="related-profile-img" />
+                    <div v-else class="related-profile-placeholder">
+                      <i class="fas fa-store"></i>
+                    </div>
+                  </div>
+                  <div class="related-details">
+                    <h3 class="related-company-name">{{ related.nombre }}</h3>
+                    <p v-if="related.ubicacion" class="related-company-location">
+                      <i class="fas fa-map-marker-alt"></i> {{ related.ubicacion }}
+                    </p>
+                    <p v-if="related.descripcion" class="related-company-description">
+                      {{ related.descripcion.length > 70 ? related.descripcion.substring(0, 70) + '...' : related.descripcion }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="related-placeholder">
+              <p>No hay comercios relacionados para mostrar.</p>
             </div>
           </div>
         </div>
@@ -323,7 +327,9 @@ export default {
       sortOption: 'name-asc',
       displayedProducts: 6,
       showCartAlert: false,
-      cartAlertMessage: ''
+      cartAlertMessage: '',
+      allCompanies: [],
+      relatedCompanies: []
     };
   },
   computed: {
@@ -363,6 +369,10 @@ export default {
   },
   created() {
     this.fetchCompanyDetail();
+    window.scrollTo(0, 0);
+  },
+  mounted() {
+    window.scrollTo(0, 0);
   },
   methods: {
 
@@ -427,6 +437,9 @@ export default {
           this.fetchBrands(companyId),
           this.fetchProducts(companyId)
         ]);
+
+        // Cargar compañías relacionadas
+        await this.fetchAllCompanies();
 
       } catch (error) {
         console.error("Error al cargar los detalles de la compañía:", error);
@@ -503,6 +516,27 @@ export default {
       if (stock <= 0) return 'Agotado';
       if (stock < 10) return 'Pocas unidades';
       return 'En stock';
+    },
+
+    async fetchAllCompanies() {
+      try {
+        const response = await apiClient.get('/companies');
+        this.allCompanies = response.data.filter(c => c._id !== this.company._id);
+        // Randomizar y tomar 4
+        let related = [...this.allCompanies];
+        for (let i = related.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [related[i], related[j]] = [related[j], related[i]];
+        }
+        this.relatedCompanies = related.slice(0, 4);
+      } catch (error) {
+        console.error('Error al cargar compañías relacionadas:', error);
+        this.relatedCompanies = [];
+      }
+    },
+
+    navigateToCompanyDetail(companyId) {
+      window.location.href = `/comercios/${companyId}`;
     }
   }
 };
@@ -1406,15 +1440,127 @@ export default {
   margin-top: 2.5rem;
 }
 
-.related-placeholder {
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2rem;
+}
+
+.related-company-card {
   background-color: var(--card-background);
   border-radius: 12px;
-  padding: 3.5rem;
-  text-align: center;
-  color: var(--text-light);
-  font-size: 1.2rem;
-  border: 1px solid var(--border-color);
   box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.related-company-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(89, 60, 41, 0.12);
+}
+
+.related-banner {
+  height: 120px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #D9C8B4 0%, #B89F84 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.related-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.related-banner-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.related-banner-placeholder i {
+  font-size: 2.2rem;
+  color: #C9BFB3;
+}
+
+.related-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.2rem;
+  padding: 1.2rem;
+}
+
+.related-profile-img-container {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(115, 97, 76, 0.08);
+  border: 3px solid white;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.related-profile-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.related-profile-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.related-profile-placeholder i {
+  font-size: 1.5rem;
+  color: white;
+}
+
+.related-details {
+  flex: 1;
+}
+
+.related-company-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.related-company-location {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-light);
+  font-size: 0.95rem;
+  margin-bottom: 0.3rem;
+}
+
+.related-company-location i {
+  color: var(--accent-color);
+}
+
+.related-company-description {
+  color: var(--text-light);
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 /* Estilos Responsivos */

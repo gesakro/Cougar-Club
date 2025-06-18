@@ -4,6 +4,8 @@ import AuthService from '../../services/authService.js';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
 import PriceService from '@/services/PriceService';
+import { useToast } from 'vue-toastification';
+import PaymentBrick from '@/components/PaymentBrick.vue';
 
 // API base URL - mejor práctica para mantenimiento
 const API_URL = 'http://localhost:5000/api';
@@ -12,14 +14,19 @@ export default {
   name: 'CommerceManagement',
   components: {
     AppNavbar,
-    AppFooter
+    AppFooter,
+    PaymentBrick
+  },
+  setup() {
+    const toast = useToast();
+    return { toast };
   },
   data() {
     return {
       // Datos de la compañía
       company: null,
       loading: true,
-      currentUserCompanyId: localStorage.getItem('companyId') || null,
+      currentUserCompanyId: null,
       
       // Modal de compañía
       showCompanyModal: false,
@@ -71,7 +78,15 @@ export default {
       // Modal de confirmación
       showDeleteModal: false,
       deleteType: '', // 'product' o 'brand'
-      itemToDelete: null
+      itemToDelete: null,
+      
+      // Datos para el pago
+      showPaymentModal: false,
+      planPrices: {
+        'Mensual': 29900,
+        'Anual': 299900
+      },
+      originalCompanyData: null,
     };
   },
   
@@ -84,35 +99,111 @@ export default {
       return this.userRole === 'Gerente';
     },
     
+    hasCompany() {
+      return this.company && this.company._id;
+    },
+    
     hasCompanyAccess() {
-      return this.isGerente && this.currentUserCompanyId;
+      return this.isGerente;
     },
     
     planOptions() {
       return ['Mensual', 'Anual'];
+    },
+    
+    selectedPlanPrice() {
+      return this.planPrices[this.currentCompany.plan] || 0;
     }
   },
   
   created() {
-    this.verifyAccess();
-    if (this.hasCompanyAccess) {
-      this.fetchCompanyData();
-    }
+    this.verifyAccessAndLoadData();
   },
   
   methods: {
-    // Verificar acceso y redireccionar si no es gerente
-    verifyAccess() {
-      if (!this.isGerente || !this.currentUserCompanyId) {
+    // Método para mostrar notificaciones de éxito
+    showSuccess(message) {
+      try {
+        if (this.toast) {
+          this.toast.success(message);
+        } else if (this.$toast) {
+          this.$toast.success(message);
+        } else {
+          console.log('✅ SUCCESS:', message);
+        }
+      } catch (error) {
+        console.log('✅ SUCCESS:', message);
+      }
+    },
+
+    // Método para mostrar notificaciones de error
+    showError(message) {
+      try {
+        if (this.toast) {
+          this.toast.error(message);
+        } else if (this.$toast) {
+          this.$toast.error(message);
+        } else {
+          console.error('❌ ERROR:', message);
+          alert(message);
+        }
+      } catch (error) {
+        console.error('❌ ERROR:', message);
+        alert(message);
+      }
+    },
+
+    // Verificar acceso y cargar datos del gerente
+    async verifyAccessAndLoadData() {
+      if (!this.isGerente) {
         // Redirigir a página de acceso denegado o dashboard
         this.$router.push('/dashboard');
         
-        // Verificar si $toast está disponible antes de usarlo
-        if (this.$toast) {
-          this.$toast.error('Acceso denegado. Solo los gerentes pueden acceder a esta página.');
+        this.showError('Acceso denegado. Solo los gerentes pueden acceder a esta página.');
+        return;
+      }
+
+      // Obtener compañía del gerente actual
+      await this.fetchManagerCompany();
+    },
+
+    // Obtener la compañía asociada al gerente actual
+    async fetchManagerCompany() {
+      this.loading = true;
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_URL}/companies/manager/company`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.data && response.data.hasCompany) {
+          // El gerente tiene una compañía
+          this.company = response.data;
+          this.currentUserCompanyId = response.data._id;
+          
+          // Actualizar localStorage con la compañía correcta
+          localStorage.setItem('userCompany', response.data._id);
+          
+          // Cargar productos y marcas
+          await this.fetchCompanyProducts();
+          await this.fetchCompanyBrands();
         } else {
-          console.error('Acceso denegado. Solo los gerentes pueden acceder a esta página.');
+          // El gerente no tiene compañía
+          this.currentUserCompanyId = null;
+          this.company = null;
         }
+      } catch (error) {
+        if (error.response?.status === 404) {
+          // No tiene compañía asociada
+          this.currentUserCompanyId = null;
+          this.company = null;
+        } else {
+          this.handleError(error, 'Error al verificar la compañía del gerente');
+        }
+      } finally {
+        this.loading = false;
       }
     },
     
@@ -134,12 +225,17 @@ export default {
     // Método centralizado para manejo de errores
     handleError(error, defaultMessage) {
       console.error(defaultMessage, error);
-      const errorMessage = error.response?.data?.message || defaultMessage;
-      if (this.$toast) {
-        this.$toast.error(errorMessage);
-      } else {
-        console.error(errorMessage);
+      
+      let errorMessage = defaultMessage;
+      
+      // Verificación segura paso a paso
+      if (error && error.response && error.response.data) {
+        errorMessage = error.response.data.message || error.response.data.error || defaultMessage;
+      } else if (error && error.message) {
+        errorMessage = error.message;
       }
+      
+      this.showError(errorMessage);
     },
     
     // Métodos para gestión de imágenes
@@ -215,6 +311,8 @@ export default {
     
     // Métodos para la compañía
     async fetchCompanyData() {
+      if (!this.currentUserCompanyId) return;
+      
       this.loading = true;
       try {
         // Obtener los datos de la compañía del gerente
@@ -233,15 +331,34 @@ export default {
       }
     },
     
-    openCompanyModal() {
-      this.currentCompany = { ...this.company };
-      
-      // Reiniciar los archivos de imagen
+    openCompanyModal(isEdit = false) {
+      if (isEdit && this.company) {
+        // Guardar snapshot de los datos originales para comparación
+        this.originalCompanyData = {
+          nombre: this.company.nombre || '',
+          email: this.company.email || '',
+          plan: this.company.plan || 'Mensual',
+          imagenBanner: this.company.imagenBanner || '',
+          imagenPerfil: this.company.imagenPerfil || '',
+          productos: this.company.productos || []
+        };
+        // Rellenar los campos del modal con los datos actuales
+        this.currentCompany = { ...this.originalCompanyData };
+      } else {
+        this.currentCompany = {
+          nombre: '',
+          email: '',
+          plan: 'Mensual',
+          imagenBanner: '',
+          imagenPerfil: '',
+          productos: []
+        };
+        this.originalCompanyData = null;
+      }
       this.companyImageFiles = {
         imagenBanner: null,
         imagenPerfil: null
       };
-      
       this.showCompanyModal = true;
     },
     
@@ -256,45 +373,141 @@ export default {
       this.showCompanyModal = false;
     },
     
-    async saveCompany() {
+    async handlePaymentSuccess() {
       try {
-        // Subir imágenes si se han seleccionado nuevas
+        // 1. Crear la empresa sin imágenes
+        const response = await axios.post(`${API_URL}/companies/manager`, {
+          ...this.currentCompany,
+          imagenBanner: '',
+          imagenPerfil: '',
+          paymentAmount: this.selectedPlanPrice,
+          paymentPlan: this.currentCompany.plan
+        });
+        const companyId = response.data.company._id;
+        let imagenBannerUrl = '';
+        let imagenPerfilUrl = '';
+
+        // 2. Subir imágenes si existen
         if (this.companyImageFiles.imagenBanner || this.companyImageFiles.imagenPerfil) {
-          try {
-            const imageUrls = await this.uploadImages('company');
-            
-            // Actualizar URLs
-            if (imageUrls.imagenBannerUrl) {
-              this.currentCompany.imagenBanner = imageUrls.imagenBannerUrl;
+          const formData = new FormData();
+          formData.append('companyId', companyId);
+          if (this.companyImageFiles.imagenBanner) {
+            formData.append('imagenBanner', this.companyImageFiles.imagenBanner);
+          }
+          if (this.companyImageFiles.imagenPerfil) {
+            formData.append('imagenPerfil', this.companyImageFiles.imagenPerfil);
+          }
+          const uploadRes = await axios.post(`${API_URL}/companies/upload-images`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: `Bearer ${localStorage.getItem('token')}`
             }
-            if (imageUrls.imagenPerfilUrl) {
-              this.currentCompany.imagenPerfil = imageUrls.imagenPerfilUrl;
-            }
-          } catch {
-            // Error ya manejado en uploadImages
+          });
+          imagenBannerUrl = uploadRes.data.imagenBannerUrl || '';
+          imagenPerfilUrl = uploadRes.data.imagenPerfilUrl || '';
+        }
+
+        // 3. Actualizar la empresa con las URLs de las imágenes
+        const updateRes = await axios.put(`${API_URL}/companies/${companyId}`, {
+          ...response.data.company,
+          imagenBanner: imagenBannerUrl || response.data.company.imagenBanner,
+          imagenPerfil: imagenPerfilUrl || response.data.company.imagenPerfil
+        });
+
+          this.showSuccess('Compañía creada con éxito');
+          // Actualizar el token y la información de la compañía
+          if (response.data.token) {
+            localStorage.setItem('token', response.data.token);
+          localStorage.setItem('userCompany', companyId);
+          }
+          // Actualizar en la lista local
+        this.company = updateRes.data;
+        this.currentUserCompanyId = companyId;
+        // Cerrar modales
+        this.showPaymentModal = false;
+        this.closeCompanyModal();
+      } catch (error) {
+        console.error('Error al crear la compañía:', error);
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Error al crear la compañía';
+        this.showError(errorMessage);
+      }
+    },
+    
+    async saveCompany() {
+      // Si NO hay compañía, esto es el flujo de registro (ya manejado por el pago)
+      if (!this.hasCompany) {
+        try {
+          if (!this.currentCompany.nombre || !this.currentCompany.email) {
+            this.showError('Por favor complete todos los campos requeridos');
             return;
           }
+          this.showPaymentModal = true;
+        } catch (error) {
+          console.error('Error al preparar el pago:', error);
+          this.showError('Error al preparar el pago');
         }
-        
-        // Actualizar compañía existente
-        await axios.put(`${API_URL}/companies/${this.currentUserCompanyId}`, this.currentCompany);
-        
-        if (this.$toast) {
-          this.$toast.success('Compañía actualizada con éxito');
+        return;
+      }
+      // Si hay compañía, esto es edición
+      try {
+        // Validar campos requeridos
+        if (!this.currentCompany.nombre || !this.currentCompany.email) {
+          this.showError('Por favor complete todos los campos requeridos');
+          return;
         }
-        
-        // Actualizar datos locales
-        this.company = { ...this.currentCompany };
-        
-        // Cerrar el modal
+        // Validar que haya cambios respecto a los datos originales
+        const original = this.originalCompanyData || {};
+        const hasChanges =
+          this.currentCompany.nombre !== original.nombre ||
+          this.currentCompany.email !== original.email ||
+          this.currentCompany.plan !== original.plan ||
+          this.companyImageFiles.imagenBanner ||
+          this.companyImageFiles.imagenPerfil;
+        if (!hasChanges) {
+          this.showError('No hay cambios para guardar.');
+          return;
+        }
+        let imagenBannerUrl = this.currentCompany.imagenBanner;
+        let imagenPerfilUrl = this.currentCompany.imagenPerfil;
+        if (this.companyImageFiles.imagenBanner || this.companyImageFiles.imagenPerfil) {
+          const formData = new FormData();
+          formData.append('companyId', this.currentUserCompanyId);
+          if (this.companyImageFiles.imagenBanner) {
+            formData.append('imagenBanner', this.companyImageFiles.imagenBanner);
+          }
+          if (this.companyImageFiles.imagenPerfil) {
+            formData.append('imagenPerfil', this.companyImageFiles.imagenPerfil);
+          }
+          const uploadRes = await axios.post(`${API_URL}/companies/upload-images`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          imagenBannerUrl = uploadRes.data.imagenBannerUrl || imagenBannerUrl;
+          imagenPerfilUrl = uploadRes.data.imagenPerfilUrl || imagenPerfilUrl;
+        }
+        const updateRes = await axios.put(`${API_URL}/companies/${this.currentUserCompanyId}`, {
+          ...this.currentCompany,
+          imagenBanner: imagenBannerUrl,
+          imagenPerfil: imagenPerfilUrl
+        });
+        this.showSuccess('Compañía actualizada con éxito');
+        this.company = updateRes.data;
         this.closeCompanyModal();
       } catch (error) {
         this.handleError(error, 'Error al guardar la compañía');
       }
     },
     
+    handlePaymentClose() {
+      this.showPaymentModal = false;
+    },
+    
     // Métodos para productos
     async fetchCompanyProducts() {
+      if (!this.currentUserCompanyId) return;
+      
       this.loadingProducts = true;
       try {
         const response = await axios.get(`${API_URL}/products?compania_id=${this.currentUserCompanyId}`);
@@ -345,48 +558,67 @@ export default {
         // Asegurar que el producto esté asociado a la compañía correcta
         this.currentProduct.compania_id = this.currentUserCompanyId;
         
+        // Validar campos requeridos
+        if (!this.currentProduct.nombre || !this.currentProduct.precio) {
+          this.showError('Por favor complete todos los campos requeridos');
+          return;
+        }
+
+        // Validar que el precio sea un número positivo
+        if (isNaN(this.currentProduct.precio) || this.currentProduct.precio <= 0) {
+          this.showError('El precio debe ser un número positivo');
+          return;
+        }
+
         // Subir imagen si se ha seleccionado una nueva
         if (this.productImageFile) {
           try {
             const imageUrl = await this.uploadImages('product');
-            if (imageUrl.imagenUrl) {
+            if (imageUrl && imageUrl.imagenUrl) {
               this.currentProduct.imagen = imageUrl.imagenUrl;
             }
-          } catch {
-            // Error ya manejado en uploadImages
+          } catch (error) {
+            console.error('Error al subir imagen:', error);
+            this.showError('Error al subir la imagen del producto');
             return;
           }
         }
         
+        let response;
         if (this.isEditModeProduct) {
           // Actualizar producto existente
-          await axios.put(`${API_URL}/products/${this.currentProduct._id}`, this.currentProduct);
-          
-          if (this.$toast) {
-            this.$toast.success('Producto actualizado con éxito');
-          }
+          response = await axios.put(`${API_URL}/products/${this.currentProduct._id}`, this.currentProduct);
+          this.showSuccess('Producto actualizado con éxito');
           
           // Actualizar en la lista local
           const index = this.companyProducts.findIndex(p => p._id === this.currentProduct._id);
           if (index !== -1) {
-            this.companyProducts[index] = { ...this.currentProduct };
+            this.companyProducts[index] = { ...response.data };
           }
         } else {
           // Crear nuevo producto
-          const response = await axios.post(`${API_URL}/products`, this.currentProduct);
-          
-          if (this.$toast) {
-            this.$toast.success('Producto creado con éxito');
-          }
+          response = await axios.post(`${API_URL}/products`, this.currentProduct);
+          this.showSuccess('Producto creado con éxito');
           
           // Añadir a la lista local
           this.companyProducts.push(response.data);
         }
         
-        // Cerrar el modal
         this.closeProductModal();
       } catch (error) {
-        this.handleError(error, 'Error al guardar el producto');
+        console.error('Error al guardar el producto:', error);
+        
+        // Manejo seguro de errores
+        let errorMessage = 'Error al guardar el producto';
+        
+        // Verificar si el error tiene una respuesta del servidor
+        if (error && error.response && error.response.data) {
+          errorMessage = error.response.data.error || error.response.data.message || errorMessage;
+        } else if (error && error.message) {
+          errorMessage = error.message;
+        }
+        
+        this.showError(errorMessage);
       }
     },
     
@@ -398,6 +630,8 @@ export default {
     
     // Métodos para marcas
     async fetchCompanyBrands() {
+      if (!this.currentUserCompanyId) return;
+      
       this.loadingBrands = true;
       try {
         const response = await axios.get(`${API_URL}/brands?compania=${this.currentUserCompanyId}`);
@@ -431,38 +665,55 @@ export default {
     
     async saveBrand() {
       try {
+        // Validar campos requeridos
+        if (!this.currentBrand.nombre) {
+          this.showError('Por favor ingrese el nombre de la marca');
+          return;
+        }
+
         // Asegurar que la marca esté asociada a la compañía correcta
+        if (!this.currentUserCompanyId) {
+          this.showError('No se ha encontrado la compañía asociada');
+          return;
+        }
+
         this.currentBrand.compania = this.currentUserCompanyId;
         
+        let response;
         if (this.isEditModeBrand) {
           // Actualizar marca existente
-          await axios.put(`${API_URL}/brands/${this.currentBrand._id}`, this.currentBrand);
-          
-          if (this.$toast) {
-            this.$toast.success('Marca actualizada con éxito');
-          }
+          response = await axios.put(`${API_URL}/brands/${this.currentBrand._id}`, this.currentBrand);
+          this.showSuccess('Marca actualizada con éxito');
           
           // Actualizar en la lista local
           const index = this.companyBrands.findIndex(b => b._id === this.currentBrand._id);
           if (index !== -1) {
-            this.companyBrands[index] = { ...this.currentBrand };
+            this.companyBrands[index] = { ...response.data };
           }
         } else {
           // Crear nueva marca
-          const response = await axios.post(`${API_URL}/brands`, this.currentBrand);
-          
-          if (this.$toast) {
-            this.$toast.success('Marca creada con éxito');
-          }
+          response = await axios.post(`${API_URL}/brands`, this.currentBrand);
+          this.showSuccess('Marca creada con éxito');
           
           // Añadir a la lista local
           this.companyBrands.push(response.data);
         }
         
-        // Cerrar el modal
         this.closeBrandModal();
       } catch (error) {
-        this.handleError(error, 'Error al guardar la marca');
+        console.error('Error al guardar la marca:', error);
+        
+        // Manejo seguro de errores
+        let errorMessage = 'Error al guardar la marca';
+        
+        // Verificar si el error tiene una respuesta del servidor
+        if (error && error.response && error.response.data) {
+          errorMessage = error.response.data.message || error.response.data.error || errorMessage;
+        } else if (error && error.message) {
+          errorMessage = error.message;
+        }
+        
+        this.showError(errorMessage);
       }
     },
     
@@ -480,9 +731,7 @@ export default {
           const response = await axios.delete(`${API_URL}/products/${this.itemToDelete._id}`);
           console.log('Respuesta del servidor:', response.data);
 
-          if (this.$toast) {
-            this.$toast.success('Producto eliminado con éxito');
-          }
+          this.showSuccess('Producto eliminado con éxito');
 
           // Eliminar de la lista local de productos
           this.companyProducts = this.companyProducts.filter(
@@ -508,9 +757,7 @@ export default {
           const response = await axios.delete(`${API_URL}/brands/${this.itemToDelete._id}`);
           console.log('Respuesta del servidor:', response.data);
 
-          if (this.$toast) {
-            this.$toast.success('Marca eliminada con éxito');
-          }
+          this.showSuccess('Marca eliminada con éxito');
 
           // Eliminar de la lista local de marcas
           this.companyBrands = this.companyBrands.filter(
@@ -526,15 +773,153 @@ export default {
         // Cerrar el modal después de mostrar el error
         this.showDeleteModal = false;
       }
-    }
+    },
   }
 };
 </script>
+
 <template>
   <div>
     <AppNavbar />
     
-    <div class="commerce-management" v-if="hasCompanyAccess && !loading">
+    <div v-if="loading" class="loading-container">
+      <i class="fas fa-spinner fa-spin"></i> Cargando información de la compañía...
+    </div>
+    
+    <!-- SOLO muestra el formulario si NO hay compañía -->
+    <div v-else-if="!hasCompany" class="container mx-auto py-8 px-4">
+      <!-- Formulario de creación de compañía con estilo de admin -->
+      <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="bg-gray-100 px-6 py-4 border-b">
+          <h2 class="text-xl font-semibold">Crear Nueva Compañía</h2>
+        </div>
+        
+        <div class="p-6">
+          <form @submit.prevent="saveCompany">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <input 
+                  type="text" 
+                  v-model="currentCompany.nombre" 
+                  required
+                  class="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input 
+                  type="email" 
+                  v-model="currentCompany.email" 
+                  required
+                  class="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Plan</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div 
+                    v-for="plan in planOptions" 
+                    :key="plan"
+                    class="plan-option"
+                    :class="{ 'selected': currentCompany.plan === plan }"
+                    @click="currentCompany.plan = plan"
+                  >
+                    <div class="plan-header">
+                      <h3 class="plan-name">{{ plan }}</h3>
+                      <div class="plan-price">
+                        {{ formatPrice(planPrices[plan]) }} COP
+                        <span v-if="plan === 'Anual'" class="discount-badge">Ahorra 20%</span>
+                      </div>
+                    </div>
+                    <div class="plan-features">
+                      <ul>
+                        <li v-if="plan === 'Mensual'">
+                          <i class="fas fa-check"></i> Pago mensual
+                        </li>
+                        <li v-if="plan === 'Anual'">
+                          <i class="fas fa-check"></i> Pago anual
+                        </li>
+                        <li>
+                          <i class="fas fa-check"></i> Acceso completo a la plataforma
+                        </li>
+                        <li>
+                          <i class="fas fa-check"></i> Soporte prioritario
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Imagen Banner</label>
+                <div class="flex items-center space-x-4">
+                  <input 
+                    type="file" 
+                    @change="e => handleImageChange(e, 'company', 'imagenBanner')" 
+                    accept="image/*"
+                    class="flex-1"
+                  />
+                  <img 
+                    v-if="currentCompany.imagenBanner" 
+                    :src="currentCompany.imagenBanner" 
+                    class="h-12 w-24 object-cover rounded"
+                    alt="Vista previa banner"
+                  />
+                </div>
+              </div>
+              
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Imagen Perfil</label>
+                <div class="flex items-center space-x-4">
+                  <input 
+                    type="file" 
+                    @change="e => handleImageChange(e, 'company', 'imagenPerfil')" 
+                    accept="image/*"
+                    class="flex-1"
+                  />
+                  <img 
+                    v-if="currentCompany.imagenPerfil" 
+                    :src="currentCompany.imagenPerfil" 
+                    class="h-12 w-12 object-cover rounded-full"
+                    alt="Vista previa perfil"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end space-x-3">
+              <button 
+                type="submit" 
+                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Continuar a pago
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Modal de pago -->
+      <PaymentBrick
+        v-if="showPaymentModal"
+        :amount="selectedPlanPrice"
+        :extraPayer="{
+          email: currentCompany.email,
+          identification: {
+            type: 'email'
+          }
+        }"
+        @success="handlePaymentSuccess"
+        @close="handlePaymentClose"
+      />
+    </div>
+    
+    <!-- SOLO muestra el dashboard si SÍ hay compañía -->
+    <div v-else class="commerce-management">
       <!-- Encabezado de página -->
       <div class="page-header">
         <div class="company-info">
@@ -669,15 +1054,6 @@ export default {
           </div>
         </div>
       </div>
-    </div>
-    
-    <div v-else-if="loading" class="loading-container">
-      <i class="fas fa-spinner fa-spin"></i> Cargando información de la compañía...
-    </div>
-    
-    <div v-else class="access-denied">
-      <h2>Acceso Denegado</h2>
-      <p>Solo los gerentes tienen acceso a esta página.</p>
     </div>
     
     <!-- Modal de Compañía -->
@@ -1343,6 +1719,398 @@ textarea {
   .form-group.half {
     padding: 0;
     margin-bottom: 1rem;
+  }
+}
+
+/* Agregar estilos específicos para el formulario de creación */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.bg-white {
+  background-color: white;
+}
+
+.shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.bg-gray-100 {
+  background-color: #f7fafc;
+}
+
+.px-6 {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.border-b {
+  border-bottom-width: 1px;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.p-6 {
+  padding: 1.5rem;
+}
+
+.grid {
+  display: grid;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .md\:col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+}
+
+.block {
+  display: block;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.text-gray-700 {
+  color: #4a5568;
+}
+
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.border {
+  border-width: 1px;
+}
+
+.rounded-md {
+  border-radius: 0.375rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.space-x-4 > * + * {
+  margin-left: 1rem;
+}
+
+.flex-1 {
+  flex: 1 1 0%;
+}
+
+.h-12 {
+  height: 3rem;
+}
+
+.w-24 {
+  width: 6rem;
+}
+
+.w-12 {
+  width: 3rem;
+}
+
+.object-cover {
+  object-fit: cover;
+}
+
+.rounded {
+  border-radius: 0.25rem;
+}
+
+.rounded-full {
+  border-radius: 9999px;
+}
+
+.mt-6 {
+  margin-top: 1.5rem;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.space-x-3 > * + * {
+  margin-left: 0.75rem;
+}
+
+.bg-blue-600 {
+  background-color: #3182ce;
+}
+
+.text-white {
+  color: white;
+}
+
+.hover\:bg-blue-700:hover {
+  background-color: #2b6cb0;
+}
+
+.plan-option {
+  border: 2px solid #ece7e1;
+  border-radius: 12px;
+  background: #fff;
+  transition: border 0.2s, box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(115, 97, 76, 0.04);
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.plan-option:hover {
+  border-color: #73614C;
+  transform: translateY(-2px) scale(1.01);
+}
+
+.plan-option.selected {
+  border-color: #73614C;
+  background: linear-gradient(90deg, #f9f6f2 60%, #f5e9d7 100%);
+  box-shadow: 0 4px 16px rgba(115, 97, 76, 0.10);
+  transform: translateY(-2px) scale(1.01);
+}
+
+.plan-header {
+  margin-bottom: 1rem;
+}
+
+.plan-name {
+  color: #401202;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.plan-price {
+  color: #73614C;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.discount-badge {
+  background: linear-gradient(90deg, #4CAF50 60%, #7be495 100%);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.9rem;
+  margin-left: 0.7rem;
+  font-weight: 600;
+}
+
+.plan-features {
+  margin-top: 1rem;
+}
+
+.plan-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.plan-features li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.plan-features i {
+  color: #4CAF50;
+  margin-right: 0.5rem;
+}
+
+/* Contenedor principal del formulario de creación */
+.container .bg-white.shadow.rounded-lg.overflow-hidden {
+  background: linear-gradient(135deg, #f5f7fa 0%, #f9f6f2 100%);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(115, 97, 76, 0.10), 0 1.5px 6px rgba(64, 18, 2, 0.06);
+  border: 1.5px solid #ece7e1;
+  overflow: visible;
+}
+
+/* Encabezado del formulario */
+.container .bg-gray-100.px-6.py-4.border-b {
+  background: linear-gradient(90deg, #73614C 0%, #401202 100%);
+  color: #fff;
+  border-bottom: none;
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 2px 8px rgba(115, 97, 76, 0.08);
+}
+
+.container .text-xl.font-semibold {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Cuerpo del formulario */
+.container .p-6 {
+  padding: 2.5rem 2rem 2rem 2rem;
+  background-color: #e6e3e3;
+}s
+
+/* Inputs y labels */
+.container label {
+  color: #73614C;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.1px;
+}
+
+.container input[type="text"],
+.container input[type="email"] {
+  border: 1.5px solid #e1e5ea;
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+  font-size: 1.08rem;
+  background: #fff;
+  transition: border 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(115, 97, 76, 0.04);
+}
+
+.container input[type="text"]:focus,
+.container input[type="email"]:focus {
+  border-color: #73614C;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(115, 97, 76, 0.10);
+}
+
+/* Planes */
+.container .plan-option {
+  border: 2px solid #ece7e1;
+  border-radius: 12px;
+  background: #fff;
+  transition: border 0.2s, box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(115, 97, 76, 0.04);
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+.container .plan-option.selected {
+  border-color: #73614C;
+  background: linear-gradient(90deg, #f9f6f2 60%, #f5e9d7 100%);
+  box-shadow: 0 4px 16px rgba(115, 97, 76, 0.10);
+  transform: translateY(-2px) scale(1.01);
+}
+.container .plan-header .plan-name {
+  color: #401202;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.container .plan-header .plan-price {
+  color: #73614C;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.container .discount-badge {
+  background: linear-gradient(90deg, #4CAF50 60%, #7be495 100%);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.9rem;
+  margin-left: 0.7rem;
+  font-weight: 600;
+}
+
+/* Imagenes */
+.container .flex.items-center.space-x-4 {
+  background: #f9f6f2;
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  margin-bottom: 0.5rem;
+}
+.container input[type="file"] {
+  background: transparent;
+  border: none;
+  color: #73614C;
+}
+.container img.h-12.w-24.object-cover.rounded,
+.container img.h-12.w-12.object-cover.rounded-full {
+  border: 2px solid #ece7e1;
+  box-shadow: 0 1px 4px rgba(115, 97, 76, 0.08);
+}
+
+/* Botón principal */
+.container .mt-6.flex.justify-end.space-x-3 button[type="submit"] {
+  background: linear-gradient(90deg, #73614C 0%, #401202 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+  border-radius: 10px;
+  padding: 0.9rem 2.2rem;
+  box-shadow: 0 2px 8px rgba(115, 97, 76, 0.10);
+  border: none;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+  letter-spacing: 0.5px;
+}
+.container .mt-6.flex.justify-end.space-x-3 button[type="submit"]:hover {
+  background: linear-gradient(90deg, #401202 0%, #73614C 100%);
+  box-shadow: 0 4px 16px rgba(115, 97, 76, 0.18);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Responsive mejoras */
+@media (max-width: 768px) {
+  .container .p-6 {
+    padding: 1.2rem 0.5rem 1.2rem 0.5rem;
+  }
+  .container .bg-white.shadow.rounded-lg.overflow-hidden {
+    border-radius: 12px;
+  }
+  .container .bg-gray-100.px-6.py-4.border-b {
+    border-radius: 12px 12px 0 0;
   }
 }
 </style>

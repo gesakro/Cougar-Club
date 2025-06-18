@@ -1,22 +1,42 @@
 const Product = require('../models/Product');
+const Brand = require('../models/Brand');
 
 // Crear un producto
 exports.createProduct = async (req, res) => {
   try {
+    console.log('Datos recibidos:', req.body);
+
+    // Validar campos requeridos
+    if (!req.body.nombre || !req.body.precio || !req.body.compania_id) {
+      return res.status(400).json({ 
+        message: 'Faltan campos requeridos: nombre, precio o compania_id' 
+      });
+    }
+
+    // Crear el producto
     const product = new Product({
       compania_id: req.body.compania_id,
-      marca_id: req.body.marca_id,
-      descripcion: req.body.descripcion,
+      marca_id: req.body.marca_id || null,
+      descripcion: req.body.descripcion || '',
       nombre: req.body.nombre,
-      precio: req.body.precio,
-      imagen: req.body.imagen,
-      categoria: req.body.categoria,
-      stock: req.body.stock
+      precio: parseFloat(req.body.precio),
+      imagen: req.body.imagen || '',
+      categoria: req.body.categoria || '',
+      stock: parseInt(req.body.stock) || 0
     });
+
+    console.log('Producto a crear:', product);
+
     const savedProduct = await product.save();
+    console.log('Producto creado:', savedProduct);
+    
     res.status(201).json(savedProduct);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error al crear producto:', error);
+    res.status(500).json({ 
+      message: 'Error al crear el producto',
+      error: error.message 
+    });
   }
 };
 

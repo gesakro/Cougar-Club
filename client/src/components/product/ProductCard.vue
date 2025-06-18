@@ -1,33 +1,22 @@
 <template>
-  <div class="product-card">
+  <div class="product-card" @click="handleCardClick">
     <div class="product-image">
       <img 
         :src="product.image || fallbackImage" 
         :alt="product.name" 
         @error="handleImageError"
       />
-      <button 
-        class="like-btn" 
-        @click.stop="toggleLike"
-        :class="{ liked: product.isLiked }"
-      >
-        ❤️
-      </button>
       <div v-if="product.discount" class="discount-badge">
         -{{ product.discount }}%
       </div>
     </div>
     <div class="product-info">
-      <p class="product-brand">{{ product.brand || 'Brand' }}</p>
       <p class="product-name">{{ product.name }}</p>
       <div class="product-price">
-        <strong>${{ formattedPrice }}</strong>
+        <strong>{{ formattedPrice }}</strong>
         <span v-if="product.originalPrice" class="original-price">
-          ${{ formattedOriginalPrice }}
+          {{ formattedOriginalPrice }}
         </span>
-      </div>
-      <div v-if="product.rating" class="product-rating">
-        ★ {{ product.rating.toFixed(1) }} ({{ product.reviewCount || '0' }})
       </div>
     </div>
   </div>
@@ -71,6 +60,9 @@ export default {
     }
   },
   methods: {
+    handleCardClick() {
+      this.$emit('card-click', this.product);
+    },
     toggleLike() {
       this.$emit('toggle-favorite', this.product.id)
     },
@@ -196,12 +188,6 @@ export default {
   text-decoration: line-through;
   color: #999;
   font-size: 0.8rem;
-}
-
-.product-rating {
-  font-size: 0.8rem;
-  color: #666;
-  margin-top: 0.3rem;
 }
 
 @media (max-width: 768px) {

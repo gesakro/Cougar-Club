@@ -4,11 +4,33 @@ const Product = require('../models/Product'); // Import Product model to check f
 // Crear una nueva marca
 exports.createBrand = async (req, res) => {
   try {
-    const brand = new Brand(req.body);
+    console.log('Datos recibidos:', req.body);
+
+    // Validar campos requeridos
+    if (!req.body.nombre || !req.body.compania) {
+      return res.status(400).json({ 
+        message: 'Faltan campos requeridos: nombre o compania' 
+      });
+    }
+
+    // Crear la marca
+    const brand = new Brand({
+      nombre: req.body.nombre,
+      compania: req.body.compania
+    });
+
+    console.log('Marca a crear:', brand);
+
     const savedBrand = await brand.save();
+    console.log('Marca creada:', savedBrand);
+    
     res.status(201).json(savedBrand);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error al crear marca:', error);
+    res.status(500).json({ 
+      message: 'Error al crear la marca',
+      error: error.message 
+    });
   }
 };
 

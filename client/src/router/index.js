@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import RequestPasswordReset from '@/views/RequestPasswordReset.vue'
 import ResetPassword from '@/views/ResetPassword.vue'
+import CompanySignUp from '@/views/CompanySignUp.vue'
 
 const routes = [
   {
@@ -137,6 +138,11 @@ const routes = [
       title: 'Cambiar contraseña | Cougar Club',
       hideNavbar: true
     }
+  },
+  {
+    path: '/registro-empresa',
+    name: 'CompanySignUp',
+    component: CompanySignUp
   },
   // Esta ruta catch-all DEBE SER la última
   {

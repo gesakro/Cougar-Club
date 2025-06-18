@@ -1,4 +1,5 @@
 <template>
+  <div class="admin-panel-wrapper">
     <AppNavbar />
     <div class="admin-panel">
       <h1 class="text-2xl font-bold mb-6">Panel de Administración</h1>
@@ -7,11 +8,6 @@
       <div class="mb-6">
         <div class="border-b border-gray-200">
           <nav class="flex -mb-px">
-            <button 
-              @click="currentTab = 'companies'" 
-              :class="['py-2 px-4 font-medium', currentTab === 'companies' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700']">
-              Compañías
-            </button>
             <button 
               @click="currentTab = 'managers'" 
               :class="['py-2 px-4 font-medium', currentTab === 'managers' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700']">
@@ -31,97 +27,6 @@
         alertType === 'success' ? 'bg-green-100 text-green-700' : 
         alertType === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700']">
         {{ alertMessage }}
-      </div>
-      
-      <!-- Sección de Compañías -->
-      <div v-if="currentTab === 'companies'">
-        <div class="flex justify-between mb-4">
-          <h2 class="text-xl font-semibold">Gestión de Compañías</h2>
-          <button @click="openCompanyForm()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
-            Agregar Compañía
-          </button>
-        </div>
-        
-        <!-- Tabla de compañías -->
-        <div class="overflow-x-auto">
-          <table class="min-w-full bg-white border border-gray-200">
-            <thead>
-              <tr>
-                <th class="py-2 px-4 border-b text-left">Nombre</th>
-                <th class="py-2 px-4 border-b text-left">Dirección</th>
-                <th class="py-2 px-4 border-b text-left">Teléfono</th>
-                <th class="py-2 px-4 border-b text-left">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="company in companies" :key="company._id" class="hover:bg-gray-50">
-                <td class="py-2 px-4 border-b">{{ company.nombre }}</td>
-                <td class="py-2 px-4 border-b">{{ company.direccion }}</td>
-                <td class="py-2 px-4 border-b">{{ company.telefono }}</td>
-                <td class="py-2 px-4 border-b">
-                  <button @click="openCompanyForm(company)" class="text-blue-500 hover:text-blue-700 mr-2">
-                    Editar
-                  </button>
-                  <button @click="confirmDelete('company', company._id)" class="text-red-500 hover:text-red-700">
-                    Eliminar
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="companies.length === 0">
-                <td colspan="4" class="py-4 text-center text-gray-500">No hay compañías registradas</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        
-        <!-- Modal para agregar/editar compañía -->
-        <div v-if="showCompanyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <h3 class="text-lg font-semibold mb-4">{{ isEditing ? 'Editar' : 'Agregar' }} Compañía</h3>
-            <form @submit.prevent="saveCompany">
-              <div class="mb-4">
-                <label class="block text-gray-700 mb-2">Nombre</label>
-                <input 
-                  v-model="formData.nombre" 
-                  type="text" 
-                  class="w-full px-3 py-2 border border-gray-300 rounded"
-                  required
-                >
-              </div>
-              <div class="mb-4">
-                <label class="block text-gray-700 mb-2">Dirección</label>
-                <input 
-                  v-model="formData.direccion" 
-                  type="text" 
-                  class="w-full px-3 py-2 border border-gray-300 rounded"
-                >
-              </div>
-              <div class="mb-4">
-                <label class="block text-gray-700 mb-2">Teléfono</label>
-                <input 
-                  v-model="formData.telefono" 
-                  type="text" 
-                  class="w-full px-3 py-2 border border-gray-300 rounded"
-                >
-              </div>
-              <div class="flex justify-end">
-                <button 
-                  type="button" 
-                  @click="showCompanyModal = false" 
-                  class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded mr-2"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit" 
-                  class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                >
-                  Guardar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
       </div>
       
       <!-- Sección de Gerentes -->
@@ -401,353 +306,306 @@
           </div>
         </div>
       </div>
-      <AppFooter />
     </div>
-  </template>
+    <AppFooter />
+  </div>
+</template>
+
+<script>
+import axios from 'axios';
+import AuthService from '../../services/authService.js';
+import AppNavbar from '@/components/layout/AppNavbar.vue';
+import AppFooter from '@/components/layout/AppFooter.vue';
+
+export default {
+  name: 'CompanyManagement',
+  components: {
+    AppNavbar,
+    AppFooter
+  },
+  data() {
+    return {
+      currentTab: 'managers',
+      companies: [],
+      managers: [],
+      users: [],
+      filteredUsers: [],
+      userFilters: {
+        compania_id: '',
+        rol: ''
+      },
+      
+      // Formularios
+      formData: {
+        nombre: '',
+        direccion: '',
+        telefono: '',
+        email: '',
+        password: '',
+        rol: '',
+        compania_id: '',
+        perfil: {
+          nombre: ''
+        }
+      },
+      
+      // Control de modales
+      showCompanyModal: false,
+      showManagerModal: false,
+      showUserModal: false,
+      showDeleteModal: false,
+      
+      // Control de edición
+      isEditing: false,
+      currentItemId: null,
+      deleteType: '', // 'company', 'manager', o 'user'
+      itemToDeleteId: null,
+      
+      // Alertas
+      alertMessage: '',
+      alertType: 'info' // 'success', 'error', 'info'
+    };
+  },
   
-  <script>
-  import axios from 'axios';
-  import AuthService from '../../services/authService.js';
-  import AppNavbar from '@/components/layout/AppNavbar.vue';
-  import AppFooter from '@/components/layout/AppFooter.vue';
+  created() {
+    this.fetchData();
+  },
   
-  export default {
-    name: 'CompanyManagement',
-    components: {
-      AppNavbar,
-      AppFooter
-    },
-    data() {
-      return {
-        currentTab: 'companies',
-        companies: [],
-        managers: [],
-        users: [],
-        filteredUsers: [],
-        userFilters: {
-          compania_id: '',
-          rol: ''
-        },
+  methods: {
+    // Obtener datos iniciales
+    async fetchData() {
+      try {
+        // Obtener compañías
+        const companyResponse = await axios.get('http://localhost:5000/api/companies');
+        this.companies = companyResponse.data;
         
-        // Formularios
-        formData: {
-          nombre: '',
-          direccion: '',
-          telefono: '',
-          email: '',
-          password: '',
-          rol: '',
-          compania_id: '',
-          perfil: {
-            nombre: ''
-          }
-        },
+        // Obtener usuarios (incluidos los gerentes)
+        const userResponse = await axios.get('http://localhost:5000/api/users');
+        this.users = userResponse.data;
         
-        // Control de modales
-        showCompanyModal: false,
-        showManagerModal: false,
-        showUserModal: false,
-        showDeleteModal: false,
+        // Filtrar gerentes
+        this.managers = this.users.filter(user => user.rol === 'Gerente');
         
-        // Control de edición
-        isEditing: false,
-        currentItemId: null,
-        deleteType: '', // 'company', 'manager', o 'user'
-        itemToDeleteId: null,
-        
-        // Alertas
-        alertMessage: '',
-        alertType: 'info' // 'success', 'error', 'info'
-      };
+        // Inicializar usuarios filtrados
+        this.filteredUsers = [...this.users];
+      } catch (error) {
+        this.showAlert('Error al cargar los datos: ' + error.message, 'error');
+      }
     },
     
-    created() {
-      this.fetchData();
+    // Filtrar usuarios
+    filterUsers() {
+      this.filteredUsers = this.users.filter(user => {
+        // Filtrar por compañía si se seleccionó una
+        const companyMatch = !this.userFilters.compania_id || 
+                            user.compania_id === this.userFilters.compania_id;
+        
+        // Filtrar por rol si se seleccionó uno
+        const roleMatch = !this.userFilters.rol || user.rol === this.userFilters.rol;
+        
+        return companyMatch && roleMatch;
+      });
+    },
+    userRole() {
+      return AuthService.getUserRole();
+    },
+    // Manejar cambio de rol en el formulario
+    handleRolChange() {
+      // Si cambia de Gerente a otro rol, limpiar compania_id
+      if (this.formData.rol !== 'Gerente') {
+        this.formData.compania_id = '';
+      }
     },
     
-    methods: {
-      // Obtener datos iniciales
-      async fetchData() {
-        try {
-          // Obtener compañías
-          const companyResponse = await axios.get('http://localhost:5000/api/companies');
-          this.companies = companyResponse.data;
-          
-          // Obtener usuarios (incluidos los gerentes)
-          const userResponse = await axios.get('http://localhost:5000/api/users');
-          this.users = userResponse.data;
-          
-          // Filtrar gerentes
-          this.managers = this.users.filter(user => user.rol === 'Gerente');
-          
-          // Inicializar usuarios filtrados
-          this.filteredUsers = [...this.users];
-        } catch (error) {
-          this.showAlert('Error al cargar los datos: ' + error.message, 'error');
-        }
-      },
+    // Obtener nombre de compañía a partir de su ID
+    getCompanyName(companyId) {
+      if (!companyId) return 'N/A';
+      const company = this.companies.find(company => company._id === companyId);
+      return company ? company.nombre : 'Desconocida';
+    },
+    
+    // Mostrar alerta
+    showAlert(message, type = 'info') {
+      this.alertMessage = message;
+      this.alertType = type;
       
-      // Filtrar usuarios
-      filterUsers() {
-        this.filteredUsers = this.users.filter(user => {
-          // Filtrar por compañía si se seleccionó una
-          const companyMatch = !this.userFilters.compania_id || 
-                              user.compania_id === this.userFilters.compania_id;
-          
-          // Filtrar por rol si se seleccionó uno
-          const roleMatch = !this.userFilters.rol || user.rol === this.userFilters.rol;
-          
-          return companyMatch && roleMatch;
-        });
-      },
-      userRole() {
-        return AuthService.getUserRole();
-      },
-      // Manejar cambio de rol en el formulario
-      handleRolChange() {
-        // Si cambia de Gerente a otro rol, limpiar compania_id
-        if (this.formData.rol !== 'Gerente') {
-          this.formData.compania_id = '';
-        }
-      },
+      // Ocultar alerta después de 5 segundos
+      setTimeout(() => {
+        this.alertMessage = '';
+      }, 5000);
+    },
+    
+    // === GERENTES ===
+    openManagerForm(manager = null) {
+      this.resetForm();
       
-      // Obtener nombre de compañía a partir de su ID
-      getCompanyName(companyId) {
-        if (!companyId) return 'N/A';
-        const company = this.companies.find(company => company._id === companyId);
-        return company ? company.nombre : 'Desconocida';
-      },
+      // Asignar rol de gerente
+      this.formData.rol = 'Gerente';
       
-      // Mostrar alerta
-      showAlert(message, type = 'info') {
-        this.alertMessage = message;
-        this.alertType = type;
-        
-        // Ocultar alerta después de 5 segundos
-        setTimeout(() => {
-          this.alertMessage = '';
-        }, 5000);
-      },
-      
-      // === COMPAÑÍAS ===
-      openCompanyForm(company = null) {
-        this.resetForm();
-        
-        if (company) {
-          // Modo edición
-          this.isEditing = true;
-          this.currentItemId = company._id;
-          this.formData.nombre = company.nombre;
-          this.formData.direccion = company.direccion;
-          this.formData.telefono = company.telefono;
-        } else {
-          // Modo creación
-          this.isEditing = false;
-        }
-        
-        this.showCompanyModal = true;
-      },
-      
-      async saveCompany() {
-        try {
-          if (this.isEditing) {
-            // Editar compañía existente
-            await axios.put(`http://localhost:5000/api/companies/${this.currentItemId}`, {
-              nombre: this.formData.nombre,
-              direccion: this.formData.direccion,
-              telefono: this.formData.telefono
-            });
-            this.showAlert('Compañía actualizada con éxito', 'success');
-          } else {
-            // Crear nueva compañía
-            await axios.post('http://localhost:5000/api/companies', {
-              nombre: this.formData.nombre,
-              direccion: this.formData.direccion,
-              telefono: this.formData.telefono
-            });
-            this.showAlert('Compañía creada con éxito', 'success');
-          }
-          
-          // Cerrar modal y actualizar datos
-          this.showCompanyModal = false;
-          this.fetchData();
-        } catch (error) {
-          this.showAlert('Error: ' + error.response?.data?.message || error.message, 'error');
-        }
-      },
-      
-      // === GERENTES ===
-      openManagerForm(manager = null) {
-        this.resetForm();
-        
-        // Asignar rol de gerente
-        this.formData.rol = 'Gerente';
-        
-        if (manager) {
-          // Modo edición
-          this.isEditing = true;
-          this.currentItemId = manager._id;
-          this.formData.email = manager.email;
-          this.formData.compania_id = manager.compania_id;
-          this.formData.perfil.nombre = manager.perfil?.nombre || '';
-        } else {
-          // Modo creación
-          this.isEditing = false;
-        }
-        
-        this.showManagerModal = true;
-      },
-      
-      async saveManager() {
-        try {
-          const userData = {
-            email: this.formData.email,
-            rol: 'Gerente',
-            compania_id: this.formData.compania_id,
-            perfil: {
-              nombre: this.formData.perfil.nombre
-            }
-          };
-          
-          // Añadir contraseña solo si está creando un nuevo gerente o se cambió explícitamente
-          if (!this.isEditing || this.formData.password) {
-            userData.password = this.formData.password;
-          }
-          
-          if (this.isEditing) {
-            // Editar gerente existente
-            await axios.put(`http://localhost:5000/api/users/${this.currentItemId}`, userData);
-            this.showAlert('Gerente actualizado con éxito', 'success');
-          } else {
-            // Crear nuevo gerente
-            await axios.post('http://localhost:5000/api/users', userData);
-            this.showAlert('Gerente creado con éxito', 'success');
-          }
-          
-          // Cerrar modal y actualizar datos
-          this.showManagerModal = false;
-          this.fetchData();
-        } catch (error) {
-          this.showAlert('Error: ' + error.response?.data?.message || error.message, 'error');
-        }
-      },
-      
-      // === USUARIOS ===
-      openUserForm(user = null) {
-        this.resetForm();
-        
-        if (user) {
-          // Modo edición
-          this.isEditing = true;
-          this.currentItemId = user._id;
-          this.formData.email = user.email;
-          this.formData.rol = user.rol;
-          this.formData.compania_id = user.compania_id || '';
-          this.formData.perfil.nombre = user.perfil?.nombre || '';
-        } else {
-          // Modo creación
-          this.isEditing = false;
-          this.formData.rol = 'Usuario'; // Default rol
-        }
-        
-        this.showUserModal = true;
-      },
-      
-      async saveUser() {
-        try {
-          const userData = {
-            email: this.formData.email,
-            rol: this.formData.rol,
-            perfil: {
-              nombre: this.formData.perfil.nombre
-            }
-          };
-          
-          // Añadir compañía solo para gerentes
-          if (this.formData.rol === 'Gerente') {
-            userData.compania_id = this.formData.compania_id;
-          }
-          
-          // Añadir contraseña solo si está creando un nuevo usuario o se cambió explícitamente
-          if (!this.isEditing || this.formData.password) {
-            userData.password = this.formData.password;
-          }
-          
-          if (this.isEditing) {
-            // Editar usuario existente
-            await axios.put(`http://localhost:5000/api/users/${this.currentItemId}`, userData);
-            this.showAlert('Usuario actualizado con éxito', 'success');
-          } else {
-            // Crear nuevo usuario
-            await axios.post('http://localhost:5000/api/users', userData);
-            this.showAlert('Usuario creado con éxito', 'success');
-          }
-          
-          // Cerrar modal y actualizar datos
-          this.showUserModal = false;
-          this.fetchData();
-        } catch (error) {
-          this.showAlert('Error: ' + error.response?.data?.message || error.message, 'error');
-        }
-      },
-      
-      // === ELIMINACIÓN ===
-      confirmDelete(type, id) {
-        this.deleteType = type;
-        this.itemToDeleteId = id;
-        this.showDeleteModal = true;
-      },
-      
-      async deleteItem() {
-        try {
-          let endpoint;
-          let successMessage;
-          
-          switch (this.deleteType) {
-            case 'company':
-              endpoint = `http://localhost:5000/api/companies/${this.itemToDeleteId}`;
-              successMessage = 'Compañía eliminada con éxito';
-              break;
-            case 'manager':
-            case 'user':
-              endpoint = `http://localhost:5000/api/users/${this.itemToDeleteId}`;
-              successMessage = this.deleteType === 'manager' ? 'Gerente eliminado con éxito' : 'Usuario eliminado con éxito';
-              break;
-            default:
-              throw new Error('Tipo de elemento desconocido');
-          }
-          
-          await axios.delete(endpoint);
-          this.showAlert(successMessage, 'success');
-          
-          // Cerrar modal y actualizar datos
-          this.showDeleteModal = false;
-          this.fetchData();
-        } catch (error) {
-          this.showAlert('Error: ' + error.response?.data?.message || error.message, 'error');
-        }
-      },
-      
-      // Resetear formulario
-      resetForm() {
-        this.formData = {
-          nombre: '',
-          direccion: '',
-          telefono: '',
-          email: '',
-          password: '',
-          rol: '',
-          compania_id: '',
-          perfil: {
-            nombre: ''
-          }
-        };
-        this.currentItemId = null;
+      if (manager) {
+        // Modo edición
+        this.isEditing = true;
+        this.currentItemId = manager._id;
+        this.formData.email = manager.email;
+        this.formData.compania_id = manager.compania_id;
+        this.formData.perfil.nombre = manager.perfil?.nombre || '';
+      } else {
+        // Modo creación
         this.isEditing = false;
       }
+      
+      this.showManagerModal = true;
+    },
+    
+    async saveManager() {
+      try {
+        const userData = {
+          email: this.formData.email,
+          rol: 'Gerente',
+          compania_id: this.formData.compania_id,
+          perfil: {
+            nombre: this.formData.perfil.nombre
+          }
+        };
+        
+        // Añadir contraseña solo si está creando un nuevo gerente o se cambió explícitamente
+        if (!this.isEditing || this.formData.password) {
+          userData.password = this.formData.password;
+        }
+        
+        if (this.isEditing) {
+          // Editar gerente existente
+          await axios.put(`http://localhost:5000/api/users/${this.currentItemId}`, userData);
+          this.showAlert('Gerente actualizado con éxito', 'success');
+        } else {
+          // Crear nuevo gerente
+          await axios.post('http://localhost:5000/api/users', userData);
+          this.showAlert('Gerente creado con éxito', 'success');
+        }
+        
+        // Cerrar modal y actualizar datos
+        this.showManagerModal = false;
+        this.fetchData();
+      } catch (error) {
+        this.showAlert('Error: ' + error.response?.data?.message || error.message, 'error');
+      }
+    },
+    
+    // === USUARIOS ===
+    openUserForm(user = null) {
+      this.resetForm();
+      
+      if (user) {
+        // Modo edición
+        this.isEditing = true;
+        this.currentItemId = user._id;
+        this.formData.email = user.email;
+        this.formData.rol = user.rol;
+        this.formData.compania_id = user.compania_id || '';
+        this.formData.perfil.nombre = user.perfil?.nombre || '';
+      } else {
+        // Modo creación
+        this.isEditing = false;
+        this.formData.rol = 'Usuario'; // Default rol
+      }
+      
+      this.showUserModal = true;
+    },
+    
+    async saveUser() {
+      try {
+        const userData = {
+          email: this.formData.email,
+          rol: this.formData.rol,
+          perfil: {
+            nombre: this.formData.perfil.nombre
+          }
+        };
+        
+        // Añadir compañía solo para gerentes
+        if (this.formData.rol === 'Gerente') {
+          userData.compania_id = this.formData.compania_id;
+        }
+        
+        // Añadir contraseña solo si está creando un nuevo usuario o se cambió explícitamente
+        if (!this.isEditing || this.formData.password) {
+          userData.password = this.formData.password;
+        }
+        
+        if (this.isEditing) {
+          // Editar usuario existente
+          await axios.put(`http://localhost:5000/api/users/${this.currentItemId}`, userData);
+          this.showAlert('Usuario actualizado con éxito', 'success');
+        } else {
+          // Crear nuevo usuario
+          await axios.post('http://localhost:5000/api/users', userData);
+          this.showAlert('Usuario creado con éxito', 'success');
+        }
+        
+        // Cerrar modal y actualizar datos
+        this.showUserModal = false;
+        this.fetchData();
+      } catch (error) {
+        this.showAlert('Error: ' + error.response?.data?.message || error.message, 'error');
+      }
+    },
+    
+    // === ELIMINACIÓN ===
+    confirmDelete(type, id) {
+      this.deleteType = type;
+      this.itemToDeleteId = id;
+      this.showDeleteModal = true;
+    },
+    
+    async deleteItem() {
+      try {
+        let endpoint;
+        let successMessage;
+        
+        switch (this.deleteType) {
+          case 'company':
+            endpoint = `http://localhost:5000/api/companies/${this.itemToDeleteId}`;
+            successMessage = 'Compañía eliminada con éxito';
+            break;
+          case 'manager':
+          case 'user':
+            endpoint = `http://localhost:5000/api/users/${this.itemToDeleteId}`;
+            successMessage = this.deleteType === 'manager' ? 'Gerente eliminado con éxito' : 'Usuario eliminado con éxito';
+            break;
+          default:
+            throw new Error('Tipo de elemento desconocido');
+        }
+        
+        await axios.delete(endpoint);
+        this.showAlert(successMessage, 'success');
+        
+        // Cerrar modal y actualizar datos
+        this.showDeleteModal = false;
+        this.fetchData();
+      } catch (error) {
+        this.showAlert('Error: ' + error.response?.data?.message || error.message, 'error');
+      }
+    },
+    
+    // Resetear formulario
+    resetForm() {
+      this.formData = {
+        nombre: '',
+        direccion: '',
+        telefono: '',
+        email: '',
+        password: '',
+        rol: '',
+        compania_id: '',
+        perfil: {
+          nombre: ''
+        }
+      };
+      this.currentItemId = null;
+      this.isEditing = false;
     }
   }
-
+}
 </script>
 
 <style>
@@ -791,7 +649,14 @@ body {
 }
 
 /* Contenedor principal */
+.admin-panel-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .admin-panel {
+  flex: 1 0 auto;
   max-width: 1280px;
   margin: 1.5rem auto;
   padding: 0 1rem;

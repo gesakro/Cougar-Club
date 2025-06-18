@@ -55,7 +55,7 @@
         
         <div v-else :class="['comercios-items', viewMode === 'list' ? 'list-view' : 'grid-view']">
           <div v-for="company in filteredCompanies" :key="company._id" class="comercio-card">
-            <router-link :to="`/comercios/${company._id}`" class="card-link">
+            <div class="card-link" @click="goToCompany(company._id)">
               <div class="card-banner">
                 <img
                   v-if="company.imagenBanner"
@@ -101,7 +101,7 @@
                   <span class="view-details">Ver detalles <i class="fas fa-chevron-right"></i></span>
                 </div>
               </div>
-            </router-link>
+            </div>
           </div>
         </div>
       </div>
@@ -165,6 +165,9 @@ export default {
   created() {
     this.fetchCompanies();
   },
+  mounted() {
+    window.scrollTo(0, 0);
+  },
   methods: {
     async fetchCompanies() {
       this.loading = true;
@@ -192,6 +195,9 @@ export default {
     },
     truncateDescription(description) {
       return description.length > 70 ? `${description.substring(0, 70)}...` : description;
+    },
+    goToCompany(companyId) {
+      window.location.href = `/comercios/${companyId}`;
     }
   }
 };

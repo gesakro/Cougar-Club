@@ -222,7 +222,7 @@
                     <p class="coupon-description">{{ coupon.description }}</p>
                     <div class="unlock-info">
                       <span class="unlock-text">
-                        Gasta {{ formatPrice(coupon.minPurchase - stats.totalGastado) }} más para desbloquear
+                        Gasta {{ formatPrice(coupon.minPurchase - stats.totalGastado) }} COP más para desbloquear
                       </span>
                       <div class="unlock-progress">
                         <div 
@@ -323,24 +323,24 @@ export default {
     userLevel() {
       if (!this.stats) return 0;
       const totalSpent = this.stats.totalGastado || 0;
-      if (totalSpent >= 1000) return 3;
-      if (totalSpent >= 500) return 2;
-      if (totalSpent >= 100) return 1;
+      if (totalSpent >= 1000000) return 3;
+      if (totalSpent >= 500000) return 2;
+      if (totalSpent >= 100000) return 1;
       return 0;
     },
     nextLevelThreshold() {
       const currentLevel = this.userLevel;
-      if (currentLevel === 0) return 100;
-      if (currentLevel === 1) return 500;
-      if (currentLevel === 2) return 1000;
+      if (currentLevel === 0) return 100000;
+      if (currentLevel === 1) return 500000;
+      if (currentLevel === 2) return 1000000;
       return null;
     },
     progressToNextLevel() {
       if (!this.nextLevelThreshold || !this.stats) return 0;
       const totalSpent = this.stats.totalGastado || 0;
       let previousThreshold = 0;
-      if (this.userLevel === 1) previousThreshold = 100;
-      if (this.userLevel === 2) previousThreshold = 500;
+      if (this.userLevel === 1) previousThreshold = 100000;
+      if (this.userLevel === 2) previousThreshold = 500000;
       
       const progress = ((totalSpent - previousThreshold) / (this.nextLevelThreshold - previousThreshold)) * 100;
       return Math.min(Math.max(progress, 0), 100);

@@ -14,18 +14,9 @@
       </div>
       
       <div v-else-if="product" class="product-content">
-        <div class="product-gallery">
+        <div class="product-gallery single-image">
           <div class="main-image">
             <img :src="product.image" :alt="product.name" class="product-img" />
-          </div>
-          <div class="image-thumbnails">
-            <!-- En una tienda real podrías tener múltiples imágenes -->
-            <div class="thumbnail active">
-              <img :src="product.image" :alt="product.name" class="thumbnail-img" />
-            </div>
-            <div class="thumbnail placeholder"></div>
-            <div class="thumbnail placeholder"></div>
-            <div class="thumbnail placeholder"></div>
           </div>
         </div>
         
@@ -33,12 +24,6 @@
           <h1 class="product-title">{{ product.name }}</h1>
           
           <div class="product-meta">
-            <div class="product-rating">
-              <i v-for="i in 5" :key="i" class="fas fa-star" 
-                 :class="{ 'filled': i <= Math.floor(product.rating), 'half-filled': i - 0.5 === Math.floor(product.rating) }"></i>
-              <span class="rating-value">{{ product.rating.toFixed(1) }}</span>
-            </div>
-            
             <div class="product-category">Categoría: {{ formatCategory(product.category) }}</div>
           </div>
           
@@ -50,7 +35,7 @@
           
           <div class="product-description">
             <h3>Descripción</h3>
-            <p>{{ product.description || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.' }}</p>
+            <p>{{ product.description || 'Sin descripción disponible.' }}</p>
           </div>
           
           <div class="product-actions">
@@ -76,7 +61,7 @@
           <div class="product-features">
             <div class="feature">
               <i class="fas fa-truck"></i>
-              <span>Envío gratuito para pedidos superiores a 50€</span>
+              <span>Envío gratuito para pedidos superiores a 50.000 COP</span>
             </div>
             <div class="feature">
               <i class="fas fa-undo"></i>
@@ -104,7 +89,7 @@
       </div>
       
       <section v-if="product && relatedProducts.length" class="related-products">
-        <h2 class="section-title">Productos relacionados</h2>
+        <h2 class="section-title">Descubre otros productos</h2>
         <ProductSection 
           :products="relatedProducts"
           @product-click="handleRelatedProductClick"
@@ -129,7 +114,6 @@ import AppNavbar from '@/components/layout/AppNavbar.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import ProductSection from '@/components/product/ProductSection.vue'
 import CartService from '@/services/CartService'
-import PriceService from '@/services/PriceService'
 import axios from 'axios';
 
 // Configuración base para axios (debe ser igual que en ComercioDetail)
@@ -207,23 +191,27 @@ export default {
 // Método para cargar productos desde datos locales (como tenías antes)
 loadProductFromLocalData(productIdParam) {
   setTimeout(() => {
-    const productId = parseInt(productIdParam);
-    
     // Obtener datos de ejemplo
     const allProducts = [
       // ... tus productos de ejemplo ...
     ];
-    
-    // Buscar el producto por ID
-    this.product = allProducts.find(p => p.id === productId);
-    
-    // Buscar productos relacionados (misma categoría)
+
+    // Buscar el producto por ID (soporta string y número)
+    this.product = allProducts.find(
+      p => p.id == productIdParam // doble igual para comparar string y número
+    );
+
+    // Seleccionar productos relacionados aleatorios (misma categoría, distinto id)
     if (this.product) {
-      this.relatedProducts = allProducts
-        .filter(p => p.id !== this.product.id && p.category === this.product.category)
-        .slice(0, 4);
+      const related = allProducts.filter(p => p.id != this.product.id && p.category === this.product.category);
+      // Randomizar el array
+      for (let i = related.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [related[i], related[j]] = [related[j], related[i]];
+      }
+      this.relatedProducts = related.slice(0, 4);
     }
-    
+
     this.loading = false;
   }, 800);
 },
@@ -239,14 +227,20 @@ loadRelatedProductsFromApi() {
   apiClient.get('/products', {
     params: { 
       category: this.product.category,
-      exclude: this.product._id
+      exclude: this.product.id // Usar id del producto actual
     }
   })
   .then(response => {
     // Mapear los productos de la API al formato local
-    this.relatedProducts = response.data
+    let related = response.data
       .map(this.mapApiProductToLocal)
-      .slice(0, 4);
+      .filter(p => String(p.id) !== String(this.product.id)); // Excluir el actual
+    // Randomizar el array
+    for (let i = related.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [related[i], related[j]] = [related[j], related[i]];
+    }
+    this.relatedProducts = related.slice(0, 5);
   })
   .catch(error => {
     console.error("Error al cargar productos relacionados:", error);
@@ -274,7 +268,8 @@ mapApiProductToLocal(apiProduct) {
   };
 },
     formatPrice(price) {
-      return PriceService.formatPrice(price);
+      // Mostrar siempre en COP
+      return price ? price.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }) : '—';
     },
     formatCategory(category) {
       const categories = {
@@ -310,8 +305,21 @@ mapApiProductToLocal(apiProduct) {
       }, 3000)
     },
     handleRelatedProductClick(product) {
-      // Navegar al nuevo producto
-      this.$router.push(`/product/${product.id}`)
+      if (String(product.id) !== String(this.product.id)) {
+        // Si venimos de un comercio, mantener los query params
+        if (this.$route.query.source === 'comercio' && this.$route.query.comercioId) {
+          this.$router.push({
+            path: `/product/${product.id}`,
+            query: {
+              source: 'comercio',
+              comercioId: this.$route.query.comercioId
+            }
+          });
+        } else {
+          // Navegación normal
+          this.$router.push(`/product/${product.id}`);
+        }
+      }
     }
   },
   created() {
@@ -381,18 +389,30 @@ mapApiProductToLocal(apiProduct) {
   .breadcrumb-link {
     display: inline-flex;
     align-items: center;
-    color: #666;
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: color 0.3s;
+    color: #fff;
+    background: linear-gradient(90deg, #b38b6d 0%, #9a735a 100%);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.7rem 1.5rem;
+    box-shadow: 0 2px 8px rgba(179, 139, 109, 0.10);
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+    margin-bottom: 1rem;
+    gap: 0.7rem;
   }
   
   .breadcrumb-link:hover {
-    color: #b38b6d;
+    background: linear-gradient(90deg, #9a735a 0%, #b38b6d 100%);
+    box-shadow: 0 4px 16px rgba(179, 139, 109, 0.18);
+    transform: translateY(-2px) scale(1.03);
+    color: #fff;
   }
   
   .breadcrumb-link i {
-    margin-right: 0.5rem;
+    margin-right: 0.7rem;
+    font-size: 1.1rem;
   }
   
   .loading-container {
@@ -743,4 +763,25 @@ mapApiProductToLocal(apiProduct) {
       width: 100%;
     }
   }
+
+.product-gallery.single-image {
+  flex-direction: column;
+  align-items: center;
+}
+.product-gallery .main-image {
+  width: 100%;
+  height: 0;
+  padding-bottom: 100%;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  border-radius: 12px;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 10px rgba(179, 139, 109, 0.08);
+}
+.product-gallery .product-img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
   </style>

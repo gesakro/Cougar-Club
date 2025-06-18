@@ -245,6 +245,13 @@ export default {
         return;
       }
 
+      // Verificar si el usuario está logueado
+      const token = localStorage.getItem('token');
+      if (!token) {
+        this.couponError = 'Debes iniciar sesión para usar cupones';
+        return;
+      }
+
       this.isLoading = true;
       this.couponError = null;
 
@@ -253,7 +260,19 @@ export default {
         this.appliedCoupon = coupon;
         this.couponError = null;
       } catch (error) {
-        this.couponError = error.response?.data?.message || 'Cupón inválido o expirado';
+        console.error('Error al validar cupón:', error);
+        
+        // Manejar diferentes tipos de errores
+        if (error.response?.status === 400) {
+          this.couponError = error.response.data.message;
+        } else if (error.response?.status === 404) {
+          this.couponError = 'Cupón no encontrado';
+        } else if (error.response?.status === 401) {
+          this.couponError = 'Debes iniciar sesión para usar cupones';
+        } else {
+          this.couponError = 'Error al validar el cupón. Intenta de nuevo.';
+        }
+        
         this.appliedCoupon = null;
       } finally {
         this.isLoading = false;
@@ -308,9 +327,28 @@ export default {
           }
         }
 
+        // Aplicar cupón si existe
         if (this.appliedCoupon) {
-          await CouponService.applyCoupon(this.couponCode, purchaseData);
+          try {
+            await CouponService.applyCoupon(this.couponCode, purchaseData);
+          } catch (couponError) {
+            console.error('Error al aplicar cupón:', couponError);
+            
+            // Si hay error con el cupón, mostrar mensaje específico
+            if (couponError.response?.status === 400) {
+              alert(`Error con el cupón: ${couponError.response.data.message}`);
+            } else {
+              alert('Error al aplicar el cupón. La compra se procesará sin descuento.');
+            }
+            
+            // Remover el cupón y continuar con la compra sin descuento
+            this.removeCoupon();
+            purchaseData.cupon = null;
+            purchaseData.totalCompra = this.totalPrice; // Usar precio sin descuento
+          }
         }
+
+        // Crear la compra
         await PurchaseService.createPurchase(purchaseData);
         alert('¡Gracias por tu compra!');
         CartService.clearCart();
@@ -318,7 +356,13 @@ export default {
         this.removeCoupon();
       } catch (error) {
         console.error('Error al procesar la compra:', error);
-        alert('Ocurrió un error al procesar tu compra. Intenta de nuevo.');
+        
+        // Mostrar mensaje de error más específico
+        if (error.message.includes('cupón')) {
+          alert('Error con el cupón aplicado. Por favor, intenta sin cupón o usa otro código.');
+        } else {
+          alert('Ocurrió un error al procesar tu compra. Intenta de nuevo.');
+        }
       }
     },
     formatPrice(price) {

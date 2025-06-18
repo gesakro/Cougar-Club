@@ -4,8 +4,8 @@
     <main class="signup-content">
       <div class="signup-card">
         <header class="signup-header">
-          <h2>Crear Cuenta</h2>
-          <p>Únete a Cougar Club</p>
+          <h2>Registro de Empresa</h2>
+          <p>Únete a Cougar Club como Gerente</p>
         </header>
         
         <form class="signup-form" @submit.prevent="handleSignup">
@@ -19,11 +19,10 @@
               <label for="fullname">Nombre completo</label>
               <div class="input-with-icon">
                 <i class="fas fa-user"></i>
-                <input type="text" id="fullname" v-model="perfil.nombre" placeholder="Tu nombre completo" required />
+                <input type="text" id="fullname" v-model="perfil.nombre" placeholder="Nombre completo" required />
               </div>
             </div>
           </div>
-          
           <div class="form-group">
             <label for="email">Email</label>
             <div class="input-with-icon">
@@ -31,7 +30,6 @@
               <input type="email" id="email" v-model="email" placeholder="ejemplo@correo.com" required />
             </div>
           </div>
-          
           <div class="form-group">
             <label for="password">Contraseña</label>
             <div class="input-with-icon">
@@ -58,7 +56,6 @@
               <span :style="{ color: passwordStrengthColor }">{{ passwordStrengthText }}</span>
             </div>
           </div>
-          
           <div class="form-group">
             <label for="confirmPassword">Confirmar Contraseña</label>
             <div class="input-with-icon">
@@ -83,62 +80,38 @@
               {{ passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}
             </p>
           </div>
-          
           <div class="form-checkbox">
             <input type="checkbox" id="terms" v-model="acceptTerms" required />
             <label for="terms">Acepto los <a href="#">Términos y Condiciones</a> y la <a href="#">Política de Privacidad</a></label>
           </div>
-          
-          
           <button type="submit" class="signup-btn" :disabled="!formValid || isLoading">
             <span v-if="isLoading"><i class="fas fa-spinner fa-spin"></i> Registrando...</span>
-            <span v-else>Crear Cuenta</span>
+            <span v-else>Crear Cuenta de Gerente</span>
           </button>
-          
-          <div class="divider">
-            <span>O regístrate con</span>
-          </div>
-          
-          <div class="social-signup">
-            <button type="button" class="google-btn">
-              <i class="fab fa-google"></i>
-              Google
-            </button>
-            <button type="button" class="facebook-btn">
-              <i class="fab fa-facebook-f"></i>
-              Facebook
-            </button>
-          </div>
-          
           <p class="login-link">
             ¿Ya tienes una cuenta? <router-link to="/login">Iniciar Sesión</router-link>
           </p>
         </form>
       </div>
-      
       <div class="benefits-card">
         <div class="benefits-content">
-          <h3>Ventajas de Cougar Club</h3>
+          <h3>Beneficios para Empresas</h3>
           <ul>
             <li>
-              <i class="fas fa-shopping-bag"></i>
-              <span>Accede a tu historial de compras y productos</span>
+              <i class="fas fa-store"></i>
+              <span>Gestiona tu tienda online de forma profesional</span>
             </li>
             <li>
-              <i class="fas fa-user-circle"></i>
-              <span>Gestiona tu información personal</span>
+              <i class="fas fa-users"></i>
+              <span>Conecta con miles de clientes potenciales</span>
             </li>
             <li>
-              <i class="fas fa-bell"></i>
-              <span>Recibe notificaciones y ofertas exclusivas</span>
+              <i class="fas fa-truck"></i>
+              <span>Gestiona envíos y entregas de forma eficiente</span>
             </li>
             <li>
-              <i class="fas fa-tag"></i>
-              <span>Descuentos especiales para miembros</span>
-            </li>
-            <li>
-              <i class="fas fa-shield-alt"></i>
-              <span>Protección de datos y seguridad garantizada</span>
+              <i class="fas fa-headset"></i>
+              <span>Soporte técnico dedicado</span>
             </li>
           </ul>
           <div class="brand-logo">
@@ -156,8 +129,9 @@ import AppFooter from '@/components/layout/AppFooter.vue';
 import AppNavbar from '@/components/layout/AppNavbar.vue';
 import axios from 'axios';
 
+
 export default {
-  name: 'UserSignup',
+  name: 'CompanySignUp',
   components: {
     AppNavbar,
     AppFooter
@@ -170,40 +144,28 @@ export default {
       showPassword: false,
       showConfirmPassword: false,
       acceptTerms: false,
-      subscribeNewsletter: false,
       isLoading: false,
       errorMessage: '',
-      successMessage: '',
       perfil: {
-        nombre: '',
-        telefono: '',
-        direccion: '',
-        preferencias: {
-          newsletter: false
-        }
+        nombre: ''
       }
     };
   },
   computed: {
     passwordStrength() {
       if (!this.password) return 0;
-      
       let score = 0;
-      // Longitud de la contraseña
       if (this.password.length > 6) score += 20;
       if (this.password.length > 10) score += 20;
-      
-      // Complejidad
-      if (/[A-Z]/.test(this.password)) score += 20;  // Mayúsculas
-      if (/[0-9]/.test(this.password)) score += 20;  // Números
-      if (/[^A-Za-z0-9]/.test(this.password)) score += 20;  // Caracteres especiales
-      
+      if (/[A-Z]/.test(this.password)) score += 20;
+      if (/[0-9]/.test(this.password)) score += 20;
+      if (/[^A-Za-z0-9]/.test(this.password)) score += 20;
       return score;
     },
     passwordStrengthColor() {
-      if (this.passwordStrength < 40) return '#FF4D4D';  // Débil
-      if (this.passwordStrength < 80) return '#FFA500';  // Media
-      return '#4CAF50';  // Fuerte
+      if (this.passwordStrength < 40) return '#FF4D4D';
+      if (this.passwordStrength < 80) return '#FFA500';
+      return '#4CAF50';
     },
     passwordStrengthText() {
       if (this.passwordStrength < 40) return 'Débil';
@@ -227,56 +189,50 @@ export default {
   methods: {
     async handleSignup() {
       if (!this.formValid) return;
-      
       this.isLoading = true;
       this.errorMessage = '';
-      this.successMessage = '';
-
       try {
-        // Preparar los datos de registro
         const signupData = {
           email: this.email,
           password: this.password,
-          nombre: this.perfil.nombre,
-          rol: 'Usuario' // Especificar explícitamente el rol como Usuario
+          nombre: this.perfil.nombre
         };
-
-        // Llamada a la API para registrar al usuario normal
-        const response = await axios.post('http://localhost:5000/api/auth/register', signupData);
-
-        // Si el registro es exitoso, guardar el token en localStorage
+        const response = await axios.post('http://localhost:5000/api/auth/register-manager', signupData);
         if (response.data && response.data.token) {
           // Guardar token en localStorage
           localStorage.setItem('token', response.data.token);
-          
+
           // Decodificar el token para obtener la información del usuario
           const token = response.data.token;
           const tokenParts = token.split('.');
           const payload = JSON.parse(atob(tokenParts[1]));
-          
+
           // Obtener información del usuario desde el payload del token
-          const userRole = payload.user.rol || 'Usuario';
-          const userName = payload.user.nombre || 'Usuario';
+          const userRole = payload.user.rol || 'Gerente';
+          const userName = payload.user.nombre || 'Gerente';
           const userEmail = payload.user.email || this.email;
           const userId = payload.user.id;
-          
+
           // Guardar información adicional del usuario
           localStorage.setItem('userRole', userRole);
           localStorage.setItem('userName', userName);
           localStorage.setItem('userEmail', userEmail);
           localStorage.setItem('userId', userId);
-          
-          // Mostrar mensaje de éxito
-          this.successMessage = `¡Bienvenido ${userName}! Tu cuenta ha sido creada exitosamente.`;
-          
-          // Redirigir al usuario al dashboard o página principal después de un breve retraso
-          setTimeout(() => {
-            this.$router.push('/');
-          }, 2000);
+
+          // Si el usuario es Gerente, guardar también su compania_id
+          if (userRole === 'Gerente' && payload.user.compania_id) {
+            localStorage.setItem('userCompany', payload.user.compania_id);
+          }
+
+          // Redirigir al dashboard de gerente
+          this.$router.push('/gestionar-comercio');
         }
       } catch (error) {
-        console.error('Error en el registro:', error);
-        this.errorMessage = error.response?.data?.message || 'Error al crear la cuenta. Por favor, intenta de nuevo.';
+        if (error.response && error.response.data && error.response.data.message) {
+          this.errorMessage = error.response.data.message;
+        } else {
+          this.errorMessage = 'Error al crear la cuenta de gerente.';
+        }
       } finally {
         this.isLoading = false;
       }
@@ -284,9 +240,8 @@ export default {
   }
 };
 </script>
-  
+
 <style>
-/* Estilos para la página de registro (SignUp) */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');
 
@@ -331,6 +286,7 @@ export default {
 .signup-card {
   flex: 1;
   padding: 2.5rem;
+  min-width: 340px;
 }
 
 .benefits-card {
@@ -338,6 +294,7 @@ export default {
   display: flex;
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   color: white;
+  min-width: 340px;
 }
 
 .benefits-content {
@@ -349,7 +306,7 @@ export default {
 }
 
 .signup-header {
-  text-align: center;
+  text-align: left;
   margin-bottom: 2rem;
 }
 
@@ -369,16 +326,20 @@ export default {
   gap: 1.5rem;
 }
 
-.form-row {
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #fcc;
   display: flex;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-@media (max-width: 992px) {
-  .signup-content {
-    flex-direction: column;
-    margin: 1rem auto;
-  }
+.form-row {
+  display: flex;
+  gap: 1.5rem;
 }
 
 .form-group {
@@ -417,7 +378,7 @@ export default {
 .input-with-icon input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(58, 110, 165, 0.2);
+  box-shadow: 0 0 0 2px rgba(115, 97, 76, 0.2);
 }
 
 .toggle-password {
@@ -432,35 +393,23 @@ export default {
 
 .password-strength {
   margin-top: 0.5rem;
-}
-
-.strength-bar {
-  height: 4px;
-  background-color: #e0e0e0;
-  border-radius: 2px;
-  overflow: hidden;
-  margin-bottom: 5px;
-}
-
-.strength-indicator {
-  height: 100%;
-  border-radius: 2px;
-  transition: var(--transition);
-}
-
-.password-match {
-  font-size: 0.85rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.password-match.match {
-  color: #4CAF50;
+.strength-bar {
+  width: 100px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: #f0f0f0;
+  overflow: hidden;
 }
 
-.password-match.mismatch {
-  color: #FF4D4D;
+.strength-indicator {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.3s ease;
 }
 
 .form-checkbox {
@@ -527,91 +476,15 @@ export default {
   margin-top: 0.5rem;
 }
 
-.signup-btn:hover {
+.signup-btn:hover:enabled {
   background-color: var(--secondary-color);
-  box-shadow: 0 4px 12px rgba(0, 78, 152, 0.3);
+  box-shadow: 0 4px 12px rgba(115, 97, 76, 0.3);
 }
 
 .signup-btn:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
   box-shadow: none;
-}
-
-.divider {
-  position: relative;
-  text-align: center;
-  margin: 1.5rem 0;
-}
-
-.divider::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background-color: var(--border-color);
-}
-
-.divider span {
-  position: relative;
-  background-color: var(--card-background);
-  padding: 0 1rem;
-  color: var(--text-light);
-  font-size: 0.9rem;
-}
-
-.social-signup {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.google-btn, .facebook-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.8rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background-color: white;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.google-btn:hover, .facebook-btn:hover {
-  background-color: #f9f9f9;
-}
-
-.google-btn i {
-  color: #DB4437;
-}
-
-.facebook-btn i {
-  color: #4267B2;
-}
-
-.login-link {
-  text-align: center;
-  margin-top: 1.5rem;
-  color: var(--text-light);
-  font-size: 0.95rem;
-}
-
-.login-link a {
-  color: var(--primary-color);
-  font-weight: 600;
-  text-decoration: none;
-  transition: var(--transition);
-}
-
-.login-link a:hover {
-  color: var(--secondary-color);
-  text-decoration: underline;
 }
 
 .benefits-card h3 {
@@ -660,12 +533,25 @@ export default {
   letter-spacing: 1px;
 }
 
+@media (max-width: 992px) {
+  .signup-content {
+    flex-direction: column;
+    margin: 1rem auto;
+  }
+  .signup-card, .benefits-card {
+    min-width: unset;
+  }
+}
+
 @media (max-width: 576px) {
   .signup-content {
     padding: 0 0.5rem;
     margin: 0.5rem auto;
   }
   .signup-card, .benefits-card {
+    padding: 1.2rem;
+  }
+  .benefits-content {
     padding: 1.2rem;
   }
 }

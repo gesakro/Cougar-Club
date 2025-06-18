@@ -16,7 +16,7 @@ apiClient.interceptors.request.use(config => {
 });
 
 export default {
-  // Validar un cupón
+  // Validar un cupón (con autenticación para validaciones completas)
   async validateCoupon(code) {
     const response = await apiClient.get(`/coupons/validate/${code}`);
     return response.data;

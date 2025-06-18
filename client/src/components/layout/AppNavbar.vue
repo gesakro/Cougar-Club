@@ -71,6 +71,10 @@ export default {
       
       // Redirigir a la página de inicio
       router.push('/');
+      // Forzar recarga para limpiar la UI
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     };
     
     const handleClickOutside = (event) => {
@@ -94,6 +98,10 @@ export default {
     // Método para actualizar el contador del carrito
     const updateCartCounter = () => {
       cartItems.value = CartService.getCartItemCount();
+    };
+    
+    const goToProfile = () => {
+      window.location.href = '/profile';
     };
     
     // Lifecycle hooks
@@ -141,7 +149,8 @@ export default {
       deactivateSearch,
       logout,
       handleClickOutside,
-      getUserInfo
+      getUserInfo,
+      goToProfile
     };
   }
 };
@@ -187,7 +196,7 @@ export default {
           
           <div class="dropdown-divider" v-if="isLoggedIn"></div>
           
-          <router-link to="/profile" class="dropdown-item" v-if="isLoggedIn">
+          <router-link to="/profile" class="dropdown-item" v-if="isLoggedIn" @click.prevent="goToProfile">
             <i class="fas fa-user-circle"></i> Mi Perfil
           </router-link>
           
@@ -580,6 +589,11 @@ button.dropdown-item {
   .dropdown-menu::before {
     right: 90px;
   }
+
+  .join-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
 }
 
 /* Ajuste adicional para pantallas muy pequeñas */
@@ -606,5 +620,22 @@ button.dropdown-item {
     width: 200px;
     right: -70px;
   }
+}
+
+.join-button {
+  background-color: #73614C;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 2px solid #73614C;
+}
+
+.join-button:hover {
+  background-color: transparent;
+  color: #73614C;
+  transform: scale(1.05);
 }
 </style>

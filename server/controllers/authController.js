@@ -79,6 +79,63 @@ exports.register = async (req, res) => {
   }
 };
 
+// Registrar un nuevo gerente (público)
+exports.registerManager = async (req, res) => {
+  try {
+    const { email, password, nombre, apellido } = req.body;
+
+    // Verificar si el usuario ya existe
+    let usuario = await User.findOne({ email: email.toLowerCase() });
+    if (usuario) {
+      return res.status(400).json({ message: 'El usuario ya existe' });
+    }
+
+    // Crear nuevo usuario gerente
+    usuario = new User({
+      email: email.toLowerCase(),
+      password,
+      rol: 'Gerente',
+      perfil: {
+        nombre: nombre || '',
+        apellido: apellido || ''
+      }
+    });
+
+    await usuario.save();
+
+    // Generar token
+    const token = jwt.sign(
+      { 
+        user: {
+          id: usuario._id,
+          email: usuario.email,
+          nombre: usuario.perfil.nombre,
+          apellido: usuario.perfil.apellido,
+          rol: usuario.rol,
+          compania_id: usuario.compania_id
+        }
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.status(201).json({
+      token,
+      usuario: {
+        id: usuario._id,
+        email: usuario.email,
+        nombre: usuario.perfil.nombre,
+        apellido: usuario.perfil.apellido,
+        rol: usuario.rol,
+        compania_id: usuario.compania_id
+      }
+    });
+  } catch (error) {
+    console.error('Error en registro de gerente:', error);
+    res.status(500).json({ message: 'Error en el servidor' });
+  }
+};
+
 // Iniciar sesión
 exports.login = async (req, res) => {
   try {
@@ -117,7 +174,8 @@ exports.login = async (req, res) => {
           email: usuario.email,
           nombre: usuario.nombre,
           apellido: usuario.apellido,
-          rol: usuario.rol
+          rol: usuario.rol,
+          compania_id: usuario.compania_id
         }
       },
       process.env.JWT_SECRET,
@@ -132,7 +190,8 @@ exports.login = async (req, res) => {
         email: usuario.email,
         nombre: usuario.nombre,
         apellido: usuario.apellido,
-        rol: usuario.rol
+        rol: usuario.rol,
+        compania_id: usuario.compania_id
       }
     });
   } catch (error) {

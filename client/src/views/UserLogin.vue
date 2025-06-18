@@ -223,7 +223,7 @@ export default {
       
       // Si el usuario es Gerente, guardar también su compania_id
       if (userRole === 'Gerente' && payload.user.compania_id) {
-        localStorage.setItem('companyId', payload.user.compania_id);  // Cambiado de 'userCompany' a 'companyId'
+        localStorage.setItem('userCompany', payload.user.compania_id);  // Cambiado de 'companyId' a 'userCompany'
       }
       
       // Si el usuario marcó "recordarme", guardar el email
