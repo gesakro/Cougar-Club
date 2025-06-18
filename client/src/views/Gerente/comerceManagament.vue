@@ -390,15 +390,15 @@ export default {
           formData.append('companyId', companyId);
           if (this.companyImageFiles.imagenBanner) {
             formData.append('imagenBanner', this.companyImageFiles.imagenBanner);
-          }
+            }
           if (this.companyImageFiles.imagenPerfil) {
             formData.append('imagenPerfil', this.companyImageFiles.imagenPerfil);
-          }
+            }
           const uploadRes = await api.post('/api/companies/upload-images', formData, {
             headers: {
               'Content-Type': 'multipart/form-data',
               Authorization: `Bearer ${localStorage.getItem('token')}`
-            }
+          }
           });
           imagenBannerUrl = uploadRes.data.imagenBannerUrl || '';
           imagenPerfilUrl = uploadRes.data.imagenPerfilUrl || '';
@@ -471,7 +471,7 @@ export default {
           formData.append('companyId', this.currentUserCompanyId);
           if (this.companyImageFiles.imagenBanner) {
             formData.append('imagenBanner', this.companyImageFiles.imagenBanner);
-          }
+        }
           if (this.companyImageFiles.imagenPerfil) {
             formData.append('imagenPerfil', this.companyImageFiles.imagenPerfil);
           }

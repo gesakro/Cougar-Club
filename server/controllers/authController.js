@@ -276,9 +276,8 @@ exports.requestPasswordReset = async (req, res) => {
     );
 
     // Crear URL de restablecimiento con protocolo y host
-    const baseUrl = process.env.NODE_ENV === 'production' 
-      ? process.env.FRONTEND_URL 
-      : 'http://localhost:8080';
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    console.log('URL base para reset:', baseUrl); // Para debugging
     const resetUrl = `${baseUrl}/reset-password/${token}`;
 
     // Configurar email

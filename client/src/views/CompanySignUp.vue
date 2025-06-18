@@ -1,126 +1,126 @@
 <template>
   <div class="signup-container">
     <AppNavbar />
-    <main class="signup-content">
-      <div class="signup-card">
-        <header class="signup-header">
-          <h2>Registro de Empresa</h2>
-          <p>Únete a Cougar Club como Gerente</p>
-        </header>
-        
-        <form class="signup-form" @submit.prevent="handleSignup">
-          <div v-if="errorMessage" class="error-message">
-            <i class="fas fa-exclamation-circle"></i>
-            {{ errorMessage }}
-          </div>
+      <main class="signup-content">
+        <div class="signup-card">
+          <header class="signup-header">
+            <h2>Registro de Empresa</h2>
+            <p>Únete a Cougar Club como Gerente</p>
+          </header>
           
-          <div class="form-row">
-            <div class="form-group">
+          <form class="signup-form" @submit.prevent="handleSignup">
+            <div v-if="errorMessage" class="error-message">
+              <i class="fas fa-exclamation-circle"></i>
+              {{ errorMessage }}
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
               <label for="fullname">Nombre completo</label>
-              <div class="input-with-icon">
-                <i class="fas fa-user"></i>
+                <div class="input-with-icon">
+                  <i class="fas fa-user"></i>
                 <input type="text" id="fullname" v-model="perfil.nombre" placeholder="Nombre completo" required />
+                </div>
               </div>
             </div>
-          </div>
-          <div class="form-group">
-            <label for="email">Email</label>
-            <div class="input-with-icon">
-              <i class="fas fa-envelope"></i>
-              <input type="email" id="email" v-model="email" placeholder="ejemplo@correo.com" required />
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="password">Contraseña</label>
-            <div class="input-with-icon">
-              <i class="fas fa-lock"></i>
-              <input 
-                :type="showPassword ? 'text' : 'password'" 
-                id="password" 
-                v-model="password" 
-                placeholder="Crea una contraseña segura" 
-                required 
-              />
-              <button 
-                type="button" 
-                class="toggle-password" 
-                @click="showPassword = !showPassword"
-              >
-                <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-              </button>
-            </div>
-            <div class="password-strength" v-if="password">
-              <div class="strength-bar">
-                <div class="strength-indicator" :style="{ width: passwordStrength + '%', backgroundColor: passwordStrengthColor }"></div>
+            <div class="form-group">
+              <label for="email">Email</label>
+              <div class="input-with-icon">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="email" v-model="email" placeholder="ejemplo@correo.com" required />
               </div>
-              <span :style="{ color: passwordStrengthColor }">{{ passwordStrengthText }}</span>
             </div>
-          </div>
-          <div class="form-group">
-            <label for="confirmPassword">Confirmar Contraseña</label>
-            <div class="input-with-icon">
-              <i class="fas fa-lock"></i>
-              <input 
-                :type="showConfirmPassword ? 'text' : 'password'" 
-                id="confirmPassword" 
-                v-model="confirmPassword" 
-                placeholder="Confirma tu contraseña" 
-                required 
-              />
-              <button 
-                type="button" 
-                class="toggle-password" 
-                @click="showConfirmPassword = !showConfirmPassword"
-              >
-                <i :class="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-              </button>
+            <div class="form-group">
+              <label for="password">Contraseña</label>
+              <div class="input-with-icon">
+                <i class="fas fa-lock"></i>
+                <input 
+                  :type="showPassword ? 'text' : 'password'" 
+                  id="password" 
+                  v-model="password" 
+                  placeholder="Crea una contraseña segura" 
+                  required 
+                />
+                <button 
+                  type="button" 
+                  class="toggle-password" 
+                  @click="showPassword = !showPassword"
+                >
+                  <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+              <div class="password-strength" v-if="password">
+                <div class="strength-bar">
+                  <div class="strength-indicator" :style="{ width: passwordStrength + '%', backgroundColor: passwordStrengthColor }"></div>
+                </div>
+                <span :style="{ color: passwordStrengthColor }">{{ passwordStrengthText }}</span>
+              </div>
             </div>
-            <p class="password-match" v-if="password && confirmPassword" :class="{ match: passwordsMatch, mismatch: !passwordsMatch }">
-              <i :class="passwordsMatch ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
-              {{ passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}
+            <div class="form-group">
+              <label for="confirmPassword">Confirmar Contraseña</label>
+              <div class="input-with-icon">
+                <i class="fas fa-lock"></i>
+                <input 
+                  :type="showConfirmPassword ? 'text' : 'password'" 
+                  id="confirmPassword" 
+                  v-model="confirmPassword" 
+                  placeholder="Confirma tu contraseña" 
+                  required 
+                />
+                <button 
+                  type="button" 
+                  class="toggle-password" 
+                  @click="showConfirmPassword = !showConfirmPassword"
+                >
+                  <i :class="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+              <p class="password-match" v-if="password && confirmPassword" :class="{ match: passwordsMatch, mismatch: !passwordsMatch }">
+                <i :class="passwordsMatch ? 'fas fa-check-circle' : 'fas fa-times-circle'"></i>
+                {{ passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}
+              </p>
+            </div>
+            <div class="form-checkbox">
+              <input type="checkbox" id="terms" v-model="acceptTerms" required />
+              <label for="terms">Acepto los <a href="#">Términos y Condiciones</a> y la <a href="#">Política de Privacidad</a></label>
+            </div>
+            <button type="submit" class="signup-btn" :disabled="!formValid || isLoading">
+              <span v-if="isLoading"><i class="fas fa-spinner fa-spin"></i> Registrando...</span>
+              <span v-else>Crear Cuenta de Gerente</span>
+            </button>
+            <p class="login-link">
+              ¿Ya tienes una cuenta? <router-link to="/login">Iniciar Sesión</router-link>
             </p>
-          </div>
-          <div class="form-checkbox">
-            <input type="checkbox" id="terms" v-model="acceptTerms" required />
-            <label for="terms">Acepto los <a href="#">Términos y Condiciones</a> y la <a href="#">Política de Privacidad</a></label>
-          </div>
-          <button type="submit" class="signup-btn" :disabled="!formValid || isLoading">
-            <span v-if="isLoading"><i class="fas fa-spinner fa-spin"></i> Registrando...</span>
-            <span v-else>Crear Cuenta de Gerente</span>
-          </button>
-          <p class="login-link">
-            ¿Ya tienes una cuenta? <router-link to="/login">Iniciar Sesión</router-link>
-          </p>
-        </form>
-      </div>
-      <div class="benefits-card">
-        <div class="benefits-content">
-          <h3>Beneficios para Empresas</h3>
-          <ul>
-            <li>
-              <i class="fas fa-store"></i>
-              <span>Gestiona tu tienda online de forma profesional</span>
-            </li>
-            <li>
-              <i class="fas fa-users"></i>
-              <span>Conecta con miles de clientes potenciales</span>
-            </li>
-            <li>
-              <i class="fas fa-truck"></i>
-              <span>Gestiona envíos y entregas de forma eficiente</span>
-            </li>
-            <li>
-              <i class="fas fa-headset"></i>
-              <span>Soporte técnico dedicado</span>
-            </li>
-          </ul>
-          <div class="brand-logo">
-            <span>Cougar Club</span>
+          </form>
+        </div>
+        <div class="benefits-card">
+          <div class="benefits-content">
+            <h3>Beneficios para Empresas</h3>
+            <ul>
+              <li>
+                <i class="fas fa-store"></i>
+                <span>Gestiona tu tienda online de forma profesional</span>
+              </li>
+              <li>
+                <i class="fas fa-users"></i>
+                <span>Conecta con miles de clientes potenciales</span>
+              </li>
+              <li>
+                <i class="fas fa-truck"></i>
+                <span>Gestiona envíos y entregas de forma eficiente</span>
+              </li>
+              <li>
+                <i class="fas fa-headset"></i>
+                <span>Soporte técnico dedicado</span>
+              </li>
+            </ul>
+            <div class="brand-logo">
+              <span>Cougar Club</span>
+            </div>
           </div>
         </div>
-      </div>
-    </main>
-    <AppFooter />
+      </main>
+      <AppFooter />
   </div>
 </template>
 

@@ -5,6 +5,7 @@ import AppNavbar from '@/components/layout/AppNavbar.vue';
 import AppFooter from '@/components/layout/AppFooter.vue';
 import { useToast } from 'vue-toastification';
 
+
 export default {
   name: 'CompanyManagement',
   components: {
@@ -148,6 +149,18 @@ export default {
       const file = event.target.files[0];
       if (!file) return;
       
+      // Validar que es una imagen
+      if (!file.type.startsWith('image/')) {
+        this.toast.error('Por favor seleccione un archivo de imagen válido');
+        return;
+      }
+      
+      // Validar tamaño (máximo 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        this.toast.error('La imagen no debe superar los 10MB');
+        return;
+      }
+      
       // Crear URL temporal para previsualización
       const tempUrl = URL.createObjectURL(file);
       
@@ -170,14 +183,6 @@ export default {
         };
         
         if (type === 'company') {
-          // Si no hay archivos nuevos, devolver URLs existentes
-          if (!this.companyImageFiles.imagenBanner && !this.companyImageFiles.imagenPerfil) {
-            return { 
-              imagenBannerUrl: this.currentCompany.imagenBanner, 
-              imagenPerfilUrl: this.currentCompany.imagenPerfil 
-            };
-          }
-          
           const formData = new FormData();
           
           if (this.companyImageFiles.imagenBanner) {
@@ -191,8 +196,8 @@ export default {
           const response = await api.post('/api/companies/upload-images', formData, { headers });
           
           return {
-            imagenBannerUrl: response.data.imagenBannerUrl || this.currentCompany.imagenBanner,
-            imagenPerfilUrl: response.data.imagenPerfilUrl || this.currentCompany.imagenPerfil
+            imagenBannerUrl: response.data.imagenBannerUrl,
+            imagenPerfilUrl: response.data.imagenPerfilUrl
           };
         } else if (type === 'product') {
           if (!this.productImageFile) {
@@ -205,11 +210,11 @@ export default {
           const response = await api.post('/api/products/upload-image', formData, { headers });
           
           return { 
-            imagenUrl: response.data.imagenUrl || this.currentProduct.imagen 
+            imagenUrl: response.data.imagenUrl
           };
         }
       } catch (error) {
-        this.handleError(error, `Error al subir imágenes de ${type === 'company' ? 'la compañía' : 'producto'}`);
+        console.error('Error al subir imágenes:', error);
         throw error;
       }
     },
@@ -260,28 +265,39 @@ export default {
     
     async saveCompany() {
       try {
-        // Subir imágenes si se han seleccionado nuevas
+        // Validar campos requeridos
+        if (!this.currentCompany.nombre || !this.currentCompany.email) {
+          this.toast.error('Por favor complete todos los campos requeridos');
+          return;
+        }
+
+        let imageUrls = {
+          imagenBannerUrl: this.currentCompany.imagenBanner,
+          imagenPerfilUrl: this.currentCompany.imagenPerfil
+        };
+
+        // Subir imágenes primero si hay nuevas
         if (this.companyImageFiles.imagenBanner || this.companyImageFiles.imagenPerfil) {
           try {
-            const imageUrls = await this.uploadImages('company');
-            
-            // Actualizar URLs
-            if (imageUrls.imagenBannerUrl) {
-              this.currentCompany.imagenBanner = imageUrls.imagenBannerUrl;
-            }
-            if (imageUrls.imagenPerfilUrl) {
-              this.currentCompany.imagenPerfil = imageUrls.imagenPerfilUrl;
-            }
-          } catch {
-            // Error ya manejado en uploadImages
+            imageUrls = await this.uploadImages('company');
+          } catch (error) {
+            console.error('Error al subir imágenes:', error);
+            this.toast.error('Error al subir las imágenes');
             return;
           }
         }
-        
+
+        // Preparar datos de la compañía con las URLs de las imágenes
+        const companyData = {
+          ...this.currentCompany,
+          imagenBanner: imageUrls.imagenBannerUrl || '',
+          imagenPerfil: imageUrls.imagenPerfilUrl || ''
+        };
+
         let response;
         if (this.isEditMode) {
           // Actualizar compañía existente
-          response = await api.put(`/api/companies/${this.currentCompany._id}`, this.currentCompany);
+          response = await api.put(`/api/companies/${this.currentCompany._id}`, companyData);
           this.toast.success('Compañía actualizada con éxito');
           
           // Actualizar en la lista local
@@ -291,7 +307,7 @@ export default {
           }
         } else {
           // Crear nueva compañía
-          response = await api.post('/api/companies', this.currentCompany);
+          response = await api.post('/api/companies', companyData);
           this.toast.success('Compañía creada con éxito');
           
           // Añadir a la lista local
@@ -456,7 +472,6 @@ export default {
     
     async executeDelete() {
       try {
-        // Usar un objeto para mapear tipos a endpoints y mensajes
         const deleteOptions = {
           company: {
             endpoint: `/api/companies/${this.itemToDelete._id}`,
@@ -480,7 +495,7 @@ export default {
             }
           }
         };
-        
+
         const options = deleteOptions[this.deleteType];
         
         if (options) {
@@ -488,16 +503,31 @@ export default {
           this.toast.success(options.successMessage);
           options.updateList();
         }
-        
-        this.showDeleteModal = false;
       } catch (error) {
-        const itemTypeMap = {
-          company: 'la compañía',
-          product: 'el producto',
-          brand: 'la marca'
-        };
+        this.handleError(error, `Error al eliminar ${this.deleteType}`);
+      } finally {
+        this.showDeleteModal = false;
+        this.itemToDelete = null;
+      }
+    },
+
+    async loadCompanyDetails(companyId) {
+      this.loadingProducts = true;
+      this.loadingBrands = true;
+      try {
+        // Cargar productos y marcas en paralelo para mejorar rendimiento
+        const [productsResponse, brandsResponse] = await Promise.all([
+          api.get(`/api/products?compania_id=${companyId}`),
+          api.get(`/api/brands?compania=${companyId}`)
+        ]);
         
-        this.handleError(error, `Error al eliminar ${itemTypeMap[this.deleteType] || 'el elemento'}`);
+        this.companyProducts = productsResponse.data;
+        this.companyBrands = brandsResponse.data;
+      } catch (error) {
+        this.handleError(error, 'Error al cargar detalles de la compañía');
+      } finally {
+        this.loadingProducts = false;
+        this.loadingBrands = false;
       }
     }
   }
@@ -557,7 +587,7 @@ export default {
             <tr v-for="company in filteredCompanies" :key="company._id">
               <td class="px-6 py-4 whitespace-nowrap">
                 <img 
-                  :src="company.imagenPerfil || '/img/default-company.png'" 
+                  :src="company.imagenPerfil || 'https://via.placeholder.com/40x40'" 
                   class="h-10 w-10 rounded-full object-cover"
                   alt="Logo de compañía"
                 />
@@ -667,6 +697,12 @@ export default {
                     class="h-12 w-24 object-cover rounded"
                     alt="Vista previa banner"
                   />
+                  <img 
+                    v-else
+                    src="https://via.placeholder.com/96x48" 
+                    class="h-12 w-24 object-cover rounded"
+                    alt="Banner por defecto"
+                  />
                 </div>
               </div>
               
@@ -684,6 +720,12 @@ export default {
                     :src="currentCompany.imagenPerfil" 
                     class="h-12 w-12 object-cover rounded-full"
                     alt="Vista previa perfil"
+                  />
+                  <img 
+                    v-else
+                    src="https://via.placeholder.com/48x48" 
+                    class="h-12 w-12 object-cover rounded-full"
+                    alt="Perfil por defecto"
                   />
                 </div>
               </div>

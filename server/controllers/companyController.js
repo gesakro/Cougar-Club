@@ -8,15 +8,19 @@ const User = require('../models/User');
 // Crear una nueva compañía
 exports.createCompany = async (req, res) => {
   try {
-    const { nombre, email, plan, password } = req.body;
+    console.log('Iniciando creación de compañía:', req.body);
+    const { nombre, email, plan } = req.body;
 
     // Verificar si ya existe una compañía con ese email
+    console.log('Verificando si existe compañía con email:', email);
     const existingCompany = await Company.findOne({ email });
     if (existingCompany) {
+      console.log('Compañía ya existe con email:', email);
       return res.status(400).json({ message: 'Ya existe una compañía registrada con este email' });
     }
 
     // Crear la compañía
+    console.log('Creando nueva compañía con datos:', { nombre, email, plan });
     const company = new Company({
       nombre,
       email,
@@ -26,52 +30,30 @@ exports.createCompany = async (req, res) => {
       productos: []
     });
 
+    console.log('Guardando compañía en la base de datos...');
     const savedCompany = await company.save();
-
-    // Crear el usuario gerente
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const user = new User({
-      email,
-      password: hashedPassword,
-      rol: 'Gerente',
-      compania_id: savedCompany._id,
-      perfil: {
-        nombre: nombre,
-        apellido: '',
-        telefono: '',
-        direccion: ''
-      }
-    });
-
-    await user.save();
-
-    // Generar token JWT
-    const payload = {
-      user: {
-        id: user._id,
-        rol: user.rol,
-        compania_id: savedCompany._id
-      }
-    };
-
-    const token = jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    console.log('Compañía guardada exitosamente:', savedCompany);
 
     res.status(201).json({
-      token,
       _id: savedCompany._id,
       nombre: savedCompany.nombre,
       email: savedCompany.email,
-      plan: savedCompany.plan
+      plan: savedCompany.plan,
+      imagenBanner: savedCompany.imagenBanner,
+      imagenPerfil: savedCompany.imagenPerfil
     });
   } catch (error) {
-    console.error('Error al crear compañía:', error);
-    res.status(500).json({ message: 'Error al crear la compañía', error: error.message });
+    console.error('Error detallado al crear compañía:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
+    res.status(500).json({ 
+      message: 'Error al crear la compañía', 
+      error: error.message,
+      details: error.code || error.name
+    });
   }
 };
 

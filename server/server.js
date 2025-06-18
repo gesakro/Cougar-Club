@@ -17,6 +17,7 @@ const allowedOrigins = [
 ];
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Configuración de CORS mejorada
 app.use(
@@ -44,6 +45,9 @@ app.use(
     optionsSuccessStatus: 200 // Para compatibilidad con algunos navegadores
   })
 );
+
+// Servir archivos estáticos desde el directorio uploads
+app.use('/uploads', express.static('uploads'));
 
 // Importar rutas
 const productRoutes = require('./routes/productRoutes');
