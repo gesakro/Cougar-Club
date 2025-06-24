@@ -7,6 +7,7 @@
         :key="product.id" 
         :product="product"
         @toggle-favorite="$emit('toggle-favorite', $event)"
+        @card-click="$emit('product-click', product)"
       />
     </div>
   </div>

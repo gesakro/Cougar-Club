@@ -15,7 +15,19 @@ const CompanySchema = new mongoose.Schema(
       type: String,
       enum: ['Mensual', 'Anual'],
       default: 'Mensual'
-    }
+    },
+    imagenBanner: {
+      type: String // URL de la imagen banner
+    },
+    imagenPerfil: {
+      type: String // URL de la imagen de perfil
+    },
+    productos: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product'
+      }
+    ]
   },
   { timestamps: true }
 );

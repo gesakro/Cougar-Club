@@ -1,50 +1,94 @@
 <template>
-    <div class="product-card-skeleton">
-      <div class="image-placeholder"></div>
-      <div class="text-placeholder"></div>
+  <div class="product-card-skeleton">
+    <div class="image-placeholder"></div>
+    <div class="info-placeholder">
+      <div class="brand-placeholder"></div>
+      <div class="name-placeholder"></div>
       <div class="price-placeholder"></div>
+      <div class="rating-placeholder"></div>
     </div>
-  </template>
-  
-  <script>
-  export default {
-    name: 'ProductCardSkeleton'
-  }
-  </script>
-  
-  <style scoped>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'ProductCardSkeleton'
+}
+</script>
+
+<style scoped>
+.product-card-skeleton {
+  width: 100%;
+  max-width: 280px;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.image-placeholder {
+  width: 100%;
+  aspect-ratio: 1/1;
+  background: linear-gradient(90deg, #f5f5f5 25%, #e8e8e8 50%, #f5f5f5 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.info-placeholder {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.brand-placeholder {
+  width: 30%;
+  height: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.name-placeholder {
+  width: 90%;
+  height: 16px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.price-placeholder {
+  width: 40%;
+  height: 18px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.rating-placeholder {
+  width: 50%;
+  height: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (max-width: 768px) {
   .product-card-skeleton {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    max-width: 160px;
   }
   
-  .image-placeholder {
-    width: 100%;
-    height: 180px;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 8px;
+  .info-placeholder {
+    padding: 8px;
+    gap: 6px;
   }
   
-  .text-placeholder {
-    width: 80%;
-    height: 16px;
-    background: #f0f0f0;
-    border-radius: 4px;
+  .name-placeholder {
+    height: 14px;
   }
   
   .price-placeholder {
-    width: 40%;
-    height: 14px;
-    background: #f0f0f0;
-    border-radius: 4px;
+    height: 16px;
   }
-  
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-  </style>
+}
+</style>
