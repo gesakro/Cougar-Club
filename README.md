@@ -192,5 +192,3 @@ La aplicación está diseñada para funcionar perfectamente en:
 - 💻 Computadoras de escritorio
 - 🖥️ Pantallas grandes
 
-
-**Desarrollado con ❤️ por el equipo de Cougar-Club**
